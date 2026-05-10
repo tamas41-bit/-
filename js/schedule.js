@@ -23,7 +23,7 @@ async function init() {
     const saved = localStorage.getItem('hankyu_player');
     if (saved) {
       const { id } = JSON.parse(saved);
-      const player = allPlayers.find(p => p.id === id);
+      const player = allPlayers.find(p => p.memberId === id);
       if (player) setScheduleLoggedIn(player);
     }
   } catch (e) {

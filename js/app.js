@@ -71,7 +71,7 @@ async function switchLeague(league) {
   const saved = localStorage.getItem('hankyu_player');
   if (saved) {
     const { id } = JSON.parse(saved);
-    const player = allPlayers.find(p => p.id === id);
+    const player = allPlayers.find(p => p.memberId === id);
     if (player) {
       setEntryLoggedIn(player);
     } else {
@@ -228,7 +228,7 @@ function populatePlayerSelect() {
 
 function setEntryLoggedIn(player) {
   loggedInPlayer = player;
-  localStorage.setItem('hankyu_player', JSON.stringify({ id: player.id, name: player.name }));
+  localStorage.setItem('hankyu_player', JSON.stringify({ id: player.memberId, name: player.name }));
   document.getElementById('entryStep1').style.display = 'none';
   document.getElementById('entryStep2').style.display = 'block';
   document.getElementById('loggedInName').textContent = player.name;

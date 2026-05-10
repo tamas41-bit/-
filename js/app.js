@@ -89,7 +89,7 @@ function showWrongLeagueMessage(name) {
   document.getElementById('entryProgress').style.width = '0%';
   document.getElementById('entryProgressText').textContent = '';
   document.getElementById('entryMatchList').innerHTML = `
-    <div class="alert alert-info">
+    <div class="alert alert-error">
       해당 리그는 회원님이 진행 중인 리그가 아닙니다.<br>
       좌측 상단의 '다른 리그 보기'에서 회원님이 진행 중인 리그를 선택해주세요.
     </div>`;

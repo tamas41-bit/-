@@ -1,7 +1,7 @@
 import { db } from './firebase-config.js';
 import {
   collection, doc, getDocs, addDoc, updateDoc,
-  query, where, orderBy, serverTimestamp, limit
+  query, where, serverTimestamp, limit
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { hashString, showAlert, formatDatetime } from './utils.js';
 
@@ -56,19 +56,19 @@ async function loadScheduleList() {
   if (!activeLeague) { el.innerHTML = '<div class="alert alert-info">진행 중인 리그가 없습니다.</div>'; return; }
 
   try {
-    const now = new Date();
     const snap = await getDocs(query(
       collection(db, 'schedules'),
-      where('leagueId', '==', activeLeague.id),
-      where('status', '==', 'open'),
-      where('datetime', '>=', now),
-      orderBy('datetime', 'asc')
+      where('leagueId', '==', activeLeague.id)
     ));
+    const now = new Date();
+    const schedules = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(s => s.status === 'open' && new Date(`${s.date}T${s.time}`) >= now)
+      .sort((a, b) => new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`));
 
-    if (snap.empty) { el.innerHTML = '<div class="empty-state"><div class="icon">📅</div>등록된 일정이 없습니다</div>'; return; }
+    if (!schedules.length) { el.innerHTML = '<div class="empty-state"><div class="icon">📅</div>등록된 일정이 없습니다</div>'; return; }
 
-    el.innerHTML = snap.docs.map(d => {
-      const s = { id: d.id, ...d.data() };
+    el.innerHTML = schedules.map(s => {
       const dt = formatDatetime(s.date, s.time);
       return `<div class="schedule-card">
         <div class="schedule-datetime">📅 ${dt}</div>
@@ -130,19 +130,20 @@ async function postSchedule() {
 async function loadMySchedules() {
   if (!scheduleLoggedIn || !activeLeague) return;
   const el = document.getElementById('myScheduleList');
-  const now = new Date();
   const snap = await getDocs(query(
     collection(db, 'schedules'),
     where('leagueId', '==', activeLeague.id),
-    where('playerId', '==', scheduleLoggedIn.id),
-    where('datetime', '>=', now),
-    orderBy('datetime', 'asc')
+    where('playerId', '==', scheduleLoggedIn.id)
   ));
+  const now = new Date();
+  const schedules = snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(s => new Date(`${s.date}T${s.time}`) >= now)
+    .sort((a, b) => new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`));
 
-  if (snap.empty) { el.innerHTML = '<div class="empty-state" style="padding:1rem;">등록된 일정이 없습니다</div>'; return; }
+  if (!schedules.length) { el.innerHTML = '<div class="empty-state" style="padding:1rem;">등록된 일정이 없습니다</div>'; return; }
 
-  el.innerHTML = snap.docs.map(d => {
-    const s = { id: d.id, ...d.data() };
+  el.innerHTML = schedules.map(s => {
     const dt = formatDatetime(s.date, s.time);
     const statusBadge = s.status === 'open'
       ? '<span class="badge badge-active">모집중</span>'

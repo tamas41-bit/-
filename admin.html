@@ -58,18 +58,17 @@
     <div class="tab-content active" id="acontent-league">
       <div class="card">
         <div class="card-header">
-          <div class="card-title">📋 현재 리그</div>
-          <span id="currentLeagueBadge"></span>
+          <div class="card-title">📋 진행 중인 리그</div>
+          <span id="activeLeagueCount" style="font-size:0.85rem;color:var(--text-muted)"></span>
         </div>
-        <div id="currentLeagueInfo"><div class="loading"><span class="spinner"></span></div></div>
+        <div id="activeLeagueList"><div class="loading"><span class="spinner"></span></div></div>
       </div>
 
       <div class="card">
         <div class="card-header">
           <div class="card-title">➕ 새 리그 시작</div>
         </div>
-        <div class="alert alert-info">현재 리그가 진행 중이어도 새 리그를 추가로 열 수 있습니다. 각 리그는 선수 관리 탭에서 별도로 구성됩니다.</div>
-        <div class="form-group" style="margin-top:0.75rem;">
+        <div class="form-group">
           <label class="form-label">리그 이름</label>
           <input type="text" class="form-control" id="leagueName" placeholder="예: 2026년 6월 리그">
         </div>
@@ -114,11 +113,17 @@
     <div class="tab-content" id="acontent-players">
       <div class="card">
         <div class="card-header">
-          <div class="card-title">🏅 이번 리그 참가자</div>
+          <div class="card-title">🏅 리그 참가자</div>
           <span id="playerCount" style="font-size:0.85rem;color:var(--text-muted)"></span>
         </div>
+        <div class="form-group" style="margin-bottom:1rem;">
+          <label class="form-label">리그 선택</label>
+          <select class="form-control" id="playerLeagueSelect" onchange="onPlayerLeagueChange()">
+            <option value="">-- 리그를 선택하세요 --</option>
+          </select>
+        </div>
         <div id="playerAlert"></div>
-        <div id="playerList"><div class="loading"><span class="spinner"></span></div></div>
+        <div id="playerList"></div>
       </div>
 
       <div class="card">
@@ -126,7 +131,7 @@
           <div class="card-title">➕ 회원에서 참가자 추가</div>
         </div>
         <div id="memberSelectAlert"></div>
-        <div id="memberSelectList"><div class="loading"><span class="spinner"></span></div></div>
+        <div id="memberSelectList"></div>
         <button class="btn btn-gold btn-full" style="margin-top:1rem;" onclick="addSelectedMembers()">선택한 회원 추가</button>
       </div>
     </div>
@@ -137,8 +142,14 @@
         <div class="card-header">
           <div class="card-title">🔧 경기 결과 수정</div>
         </div>
+        <div class="form-group" style="margin-bottom:1rem;">
+          <label class="form-label">리그 선택</label>
+          <select class="form-control" id="resultLeagueSelect" onchange="onResultLeagueChange()">
+            <option value="">-- 리그를 선택하세요 --</option>
+          </select>
+        </div>
         <p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;">관리자 권한으로 결과를 직접 수정하거나 초기화할 수 있습니다.</p>
-        <div id="adminMatchList"><div class="loading"><span class="spinner"></span></div></div>
+        <div id="adminMatchList"></div>
       </div>
     </div>
 

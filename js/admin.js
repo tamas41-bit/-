@@ -5,13 +5,14 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { hashString, showAlert, generateMatchPairs } from './utils.js';
 
-let currentLeague = null;
+let allActiveLeagues = [];
+let currentLeague = null;   // 선수 관리 탭에서 선택된 리그
+let resultLeague = null;    // 결과 수정 탭에서 선택된 리그
 let allPlayers = [];
 let allMatches = [];
 let allMembers = [];
 let playerToDelete = null;
 let memberToDelete = null;
-let editingMatchId = null;
 
 async function init() {
   const cfg = await getDoc(doc(db, 'config', 'settings'));
@@ -50,33 +51,64 @@ function adminLogout() {
 }
 
 async function loadAll() {
-  await Promise.all([loadLeague(), loadMembers()]);
-  await loadPlayers();
+  await Promise.all([loadLeagues(), loadMembers()]);
 }
 
 // ── 리그 관리 ──────────────────────────────────────────────────────
 
-async function loadLeague() {
-  const snap = await getDocs(query(collection(db, 'leagues'), where('active', '==', true), orderBy('createdAt', 'desc'), limit(1)));
-  const info = document.getElementById('currentLeagueInfo');
-  const badge = document.getElementById('currentLeagueBadge');
+async function loadLeagues() {
+  try {
+    const snap = await getDocs(query(
+      collection(db, 'leagues'),
+      where('active', '==', true),
+      orderBy('createdAt', 'desc')
+    ));
+    allActiveLeagues = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderLeagueList();
+    renderLeagueSelectors();
+  } catch (e) {
+    document.getElementById('activeLeagueList').innerHTML =
+      `<div class="alert alert-error">불러오기 실패: ${e.message}</div>`;
+  }
+}
 
-  if (snap.empty) {
-    currentLeague = null;
-    badge.innerHTML = '<span class="badge badge-inactive">없음</span>';
-    info.innerHTML = '<div class="empty-state" style="padding:1rem;">진행 중인 리그가 없습니다</div>';
+function renderLeagueList() {
+  const el = document.getElementById('activeLeagueList');
+  const countEl = document.getElementById('activeLeagueCount');
+  countEl.textContent = `총 ${allActiveLeagues.length}개`;
+
+  if (!allActiveLeagues.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:1rem;">진행 중인 리그가 없습니다</div>';
     return;
   }
-  currentLeague = { id: snap.docs[0].id, ...snap.docs[0].data() };
-  const s = currentLeague.scoring;
-  badge.innerHTML = '<span class="badge badge-active">진행 중</span>';
-  info.innerHTML = `<div>
-    <strong style="color:var(--gold);font-size:1.05rem;">${currentLeague.name}</strong>
-    <div style="color:var(--text-secondary);font-size:0.88rem;margin-top:0.3rem;">승 ${s.win}점 · 패 ${s.loss}점 · 미경기 ${s.noGame}점</div>
-    <div style="margin-top:0.75rem;">
-      <button class="btn btn-sm btn-danger" onclick="endLeague()">리그 종료</button>
-    </div>
-  </div>`;
+  el.innerHTML = allActiveLeagues.map(league => {
+    const s = league.scoring;
+    return `<div class="player-row" style="flex-direction:column;align-items:flex-start;gap:0.4rem;padding:0.85rem 0;">
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+        <strong style="color:var(--gold);font-size:1rem;">${league.name}</strong>
+        <button class="btn btn-sm btn-danger" onclick="endLeague('${league.id}','${league.name}')">종료</button>
+      </div>
+      <div style="color:var(--text-secondary);font-size:0.83rem;">승 ${s.win}점 · 패 ${s.loss}점 · 미경기 ${s.noGame}점</div>
+    </div>`;
+  }).join('<hr style="border-color:var(--border);margin:0;">');
+}
+
+function renderLeagueSelectors() {
+  const options = allActiveLeagues.length
+    ? allActiveLeagues.map(l => `<option value="${l.id}">${l.name}</option>`).join('')
+    : '<option value="">진행 중인 리그 없음</option>';
+
+  const playerSel = document.getElementById('playerLeagueSelect');
+  const resultSel = document.getElementById('resultLeagueSelect');
+  const prevPlayer = playerSel.value;
+  const prevResult = resultSel.value;
+
+  playerSel.innerHTML = '<option value="">-- 리그를 선택하세요 --</option>' + options;
+  resultSel.innerHTML = '<option value="">-- 리그를 선택하세요 --</option>' + options;
+
+  // 기존 선택값 유지
+  if (prevPlayer && allActiveLeagues.find(l => l.id === prevPlayer)) playerSel.value = prevPlayer;
+  if (prevResult && allActiveLeagues.find(l => l.id === prevResult)) resultSel.value = prevResult;
 }
 
 async function createLeague() {
@@ -89,22 +121,24 @@ async function createLeague() {
   try {
     const newRef = doc(collection(db, 'leagues'));
     await setDoc(newRef, { name, active: true, scoring: { win, loss, noGame }, createdAt: serverTimestamp() });
-
-    currentLeague = { id: newRef.id, name, active: true, scoring: { win, loss, noGame } };
-    allPlayers = []; allMatches = [];
-
     showAlert('createLeagueAlert', '리그가 생성되었습니다! 선수 관리 탭에서 참가자를 등록하세요.', 'success');
     document.getElementById('leagueName').value = '';
-    await loadLeague();
-    await loadPlayers();
+    await loadLeagues();
   } catch (e) { showAlert('createLeagueAlert', '오류: ' + e.message); }
 }
 
-async function endLeague() {
-  if (!currentLeague || !confirm(`"${currentLeague.name}" 리그를 종료하시겠습니까?`)) return;
-  await updateDoc(doc(db, 'leagues', currentLeague.id), { active: false });
-  currentLeague = null; allPlayers = []; allMatches = [];
-  await loadAll();
+async function endLeague(leagueId, leagueName) {
+  if (!confirm(`"${leagueName}" 리그를 종료하시겠습니까?`)) return;
+  await updateDoc(doc(db, 'leagues', leagueId), { active: false });
+  if (currentLeague?.id === leagueId) {
+    currentLeague = null; allPlayers = []; allMatches = [];
+    renderPlayerTab();
+  }
+  if (resultLeague?.id === leagueId) {
+    resultLeague = null;
+    renderResultTab();
+  }
+  await loadLeagues();
 }
 
 // ── 회원 관리 ──────────────────────────────────────────────────────
@@ -115,8 +149,10 @@ async function loadMembers() {
     allMembers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     document.getElementById('memberCount').textContent = `총 ${allMembers.length}명`;
     renderMemberList();
+    if (currentLeague) renderMemberSelectForLeague();
   } catch (e) {
-    document.getElementById('memberList').innerHTML = `<div class="alert alert-error">불러오기 실패: ${e.message}</div>`;
+    document.getElementById('memberList').innerHTML =
+      `<div class="alert alert-error">불러오기 실패: ${e.message}</div>`;
   }
 }
 
@@ -137,7 +173,6 @@ async function addMember() {
     document.getElementById('newMemberPin').value = '';
     showAlert('memberAlert', `${name} 회원이 등록되었습니다.`, 'success');
     await loadMembers();
-    renderMemberSelectForLeague();
   } catch (e) { showAlert('memberAlert', '오류: ' + e.message); }
 }
 
@@ -147,7 +182,7 @@ function renderMemberList() {
     el.innerHTML = '<div class="empty-state" style="padding:1rem;">등록된 회원이 없습니다</div>';
     return;
   }
-  el.innerHTML = allMembers.map((m, i) => `
+  el.innerHTML = allMembers.map(m => `
     <div class="player-row">
       <span>
         <strong>${m.name}</strong>
@@ -178,7 +213,8 @@ async function promptResetMemberPin(memberId, memberName) {
 
 function openDeleteMember(memberId, memberName) {
   memberToDelete = memberId;
-  document.getElementById('deleteMemberInfo').textContent = `"${memberName}" 회원을 삭제하시겠습니까? (현재 리그 참가자에서는 제거되지 않습니다)`;
+  document.getElementById('deleteMemberInfo').textContent =
+    `"${memberName}" 회원을 삭제하시겠습니까? (현재 리그 참가자에서는 제거되지 않습니다)`;
   document.getElementById('deleteMemberModal').classList.add('active');
 }
 
@@ -189,33 +225,39 @@ async function confirmDeleteMember() {
     document.getElementById('deleteMemberModal').classList.remove('active');
     memberToDelete = null;
     await loadMembers();
-    renderMemberSelectForLeague();
   } catch (e) { alert('오류: ' + e.message); }
 }
 
 // ── 선수 관리 ──────────────────────────────────────────────────────
 
+async function onPlayerLeagueChange() {
+  const leagueId = document.getElementById('playerLeagueSelect').value;
+  currentLeague = allActiveLeagues.find(l => l.id === leagueId) || null;
+  allPlayers = []; allMatches = [];
+  if (!currentLeague) { renderPlayerTab(); return; }
+  await loadPlayers();
+}
+
 async function loadPlayers() {
-  if (!currentLeague) {
-    document.getElementById('playerList').innerHTML = '<div class="alert alert-info">리그를 먼저 생성하세요.</div>';
-    document.getElementById('adminMatchList').innerHTML = '<div class="alert alert-info">리그를 먼저 생성하세요.</div>';
-    document.getElementById('memberSelectList').innerHTML = '<div class="alert alert-info">리그를 먼저 생성하세요.</div>';
-    return;
-  }
+  if (!currentLeague) { renderPlayerTab(); return; }
   const [ps, ms] = await Promise.all([
     getDocs(collection(db, 'leagues', currentLeague.id, 'players')),
     getDocs(collection(db, 'leagues', currentLeague.id, 'matches'))
   ]);
   allPlayers = ps.docs.map(d => ({ id: d.id, ...d.data() }));
   allMatches = ms.docs.map(d => ({ id: d.id, ...d.data() }));
-  document.getElementById('playerCount').textContent = `총 ${allPlayers.length}명`;
+  renderPlayerTab();
+}
+
+function renderPlayerTab() {
+  document.getElementById('playerCount').textContent = currentLeague ? `총 ${allPlayers.length}명` : '';
   renderPlayerList();
-  renderAdminMatchList();
   renderMemberSelectForLeague();
 }
 
 function renderPlayerList() {
   const el = document.getElementById('playerList');
+  if (!currentLeague) { el.innerHTML = ''; return; }
   if (!allPlayers.length) {
     el.innerHTML = '<div class="empty-state" style="padding:1rem;">등록된 선수가 없습니다</div>';
     return;
@@ -226,19 +268,14 @@ function renderPlayerList() {
         <strong>${p.name}</strong>
         ${p.handicap != null ? `<span style="color:var(--text-muted);font-size:0.85rem;margin-left:0.4rem;">핸디 ${p.handicap}</span>` : ''}
       </span>
-      <div style="display:flex;gap:0.5rem;">
-        <button class="btn btn-sm btn-danger" onclick="openDeletePlayer('${p.id}','${p.name}')">삭제</button>
-      </div>
+      <button class="btn btn-sm btn-danger" onclick="openDeletePlayer('${p.id}','${p.name}')">삭제</button>
     </div>`).join('');
 }
 
 function renderMemberSelectForLeague() {
   const el = document.getElementById('memberSelectList');
   if (!el) return;
-  if (!currentLeague) {
-    el.innerHTML = '<div class="alert alert-info">리그를 먼저 생성하세요.</div>';
-    return;
-  }
+  if (!currentLeague) { el.innerHTML = ''; return; }
   if (!allMembers.length) {
     el.innerHTML = '<div class="empty-state">등록된 회원이 없습니다. 먼저 회원 관리 탭에서 회원을 등록하세요.</div>';
     return;
@@ -246,7 +283,7 @@ function renderMemberSelectForLeague() {
   const enrolledNames = new Set(allPlayers.map(p => p.name));
   const available = allMembers.filter(m => !enrolledNames.has(m.name));
   if (!available.length) {
-    el.innerHTML = '<div class="empty-state">모든 회원이 이미 이번 리그 참가자로 등록되어 있습니다.</div>';
+    el.innerHTML = '<div class="empty-state">모든 회원이 이미 참가자로 등록되어 있습니다.</div>';
     return;
   }
   el.innerHTML = available.map(m => `
@@ -262,7 +299,7 @@ function renderMemberSelectForLeague() {
 }
 
 async function addSelectedMembers() {
-  if (!currentLeague) { showAlert('memberSelectAlert', '리그를 먼저 생성하세요.'); return; }
+  if (!currentLeague) { showAlert('memberSelectAlert', '리그를 먼저 선택하세요.'); return; }
   const checked = [...document.querySelectorAll('#memberSelectList input[type=checkbox]:checked')];
   if (!checked.length) { showAlert('memberSelectAlert', '추가할 회원을 선택하세요.'); return; }
 
@@ -275,12 +312,7 @@ async function addSelectedMembers() {
 
     selectedMembers.forEach(m => {
       const ref = doc(collection(db, 'leagues', currentLeague.id, 'players'));
-      batch.set(ref, {
-        name: m.name,
-        handicap: m.handicap ?? 0,
-        pinHash: m.pinHash,
-        memberId: m.id
-      });
+      batch.set(ref, { name: m.name, handicap: m.handicap ?? 0, pinHash: m.pinHash, memberId: m.id });
       newPlayerIds.push(ref.id);
     });
 
@@ -299,14 +331,15 @@ async function addSelectedMembers() {
     });
 
     await batch.commit();
-    showAlert('memberSelectAlert', `${selectedMembers.length}명이 참가자로 추가되었습니다!`, 'success');
+    showAlert('memberSelectAlert', `${selectedMembers.length}명이 추가되었습니다!`, 'success');
     await loadPlayers();
   } catch (e) { showAlert('memberSelectAlert', '오류: ' + e.message); }
 }
 
 function openDeletePlayer(playerId, playerName) {
   playerToDelete = playerId;
-  document.getElementById('deletePlayerInfo').textContent = `"${playerName}" 선수를 삭제하면 관련 경기 기록도 모두 삭제됩니다.`;
+  document.getElementById('deletePlayerInfo').textContent =
+    `"${playerName}" 선수를 삭제하면 관련 경기 기록도 모두 삭제됩니다.`;
   document.getElementById('deletePlayerModal').classList.add('active');
 }
 
@@ -324,14 +357,33 @@ async function confirmDeletePlayer() {
 
 // ── 결과 수정 ──────────────────────────────────────────────────────
 
-function renderAdminMatchList() {
-  const el = document.getElementById('adminMatchList');
-  if (!allMatches.length) { el.innerHTML = '<div class="empty-state">경기가 없습니다</div>'; return; }
+async function onResultLeagueChange() {
+  const leagueId = document.getElementById('resultLeagueSelect').value;
+  resultLeague = allActiveLeagues.find(l => l.id === leagueId) || null;
+  if (!resultLeague) { renderResultTab([], []); return; }
+  await loadResultData();
+}
 
-  const sorted = [...allMatches].sort((a, b) => (a.result ? 1 : 0) - (b.result ? 1 : 0));
+async function loadResultData() {
+  if (!resultLeague) return;
+  const [ps, ms] = await Promise.all([
+    getDocs(collection(db, 'leagues', resultLeague.id, 'players')),
+    getDocs(collection(db, 'leagues', resultLeague.id, 'matches'))
+  ]);
+  const players = ps.docs.map(d => ({ id: d.id, ...d.data() }));
+  const matches = ms.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderResultTab(players, matches);
+}
+
+function renderResultTab(players = [], matches = []) {
+  const el = document.getElementById('adminMatchList');
+  if (!resultLeague) { el.innerHTML = ''; return; }
+  if (!matches.length) { el.innerHTML = '<div class="empty-state">경기가 없습니다</div>'; return; }
+
+  const sorted = [...matches].sort((a, b) => (a.result ? 1 : 0) - (b.result ? 1 : 0));
   el.innerHTML = sorted.map(m => {
-    const p1 = allPlayers.find(p => p.id === m.player1Id);
-    const p2 = allPlayers.find(p => p.id === m.player2Id);
+    const p1 = players.find(p => p.id === m.player1Id);
+    const p2 = players.find(p => p.id === m.player2Id);
     const p1n = p1?.name || '?', p2n = p2?.name || '?';
     let resultText = '미진행', resultStyle = 'color:var(--text-muted)';
     if (m.result === 'player1') { resultText = `${p1n} 승`; resultStyle = 'color:#81c784'; }
@@ -348,7 +400,6 @@ function renderAdminMatchList() {
 }
 
 function openEditResult(matchId, p1Id, p2Id, p1Name, p2Name) {
-  editingMatchId = matchId;
   document.getElementById('editMatchId').value = matchId;
   document.getElementById('editPlayer1Id').value = p1Id;
   document.getElementById('editPlayer2Id').value = p2Id;
@@ -360,14 +411,16 @@ function openEditResult(matchId, p1Id, p2Id, p1Name, p2Name) {
 }
 
 async function adminSetResult(result) {
+  if (!resultLeague) return;
   const matchId = document.getElementById('editMatchId').value;
   const p1Id = document.getElementById('editPlayer1Id').value;
   const p2Id = document.getElementById('editPlayer2Id').value;
   const winnerId = result === 'player1' ? p1Id : result === 'player2' ? p2Id : null;
   try {
-    await updateDoc(doc(db, 'leagues', currentLeague.id, 'matches', matchId), { result, winnerId, reportedBy: 'admin', reportedAt: new Date() });
+    await updateDoc(doc(db, 'leagues', resultLeague.id, 'matches', matchId),
+      { result, winnerId, reportedBy: 'admin', reportedAt: new Date() });
     document.getElementById('editResultModal').classList.remove('active');
-    await loadPlayers();
+    await loadResultData();
   } catch (e) { showAlert('editModalAlert', '오류: ' + e.message); }
 }
 
@@ -395,9 +448,11 @@ window.addMember = addMember;
 window.promptResetMemberPin = promptResetMemberPin;
 window.openDeleteMember = openDeleteMember;
 window.confirmDeleteMember = confirmDeleteMember;
+window.onPlayerLeagueChange = onPlayerLeagueChange;
 window.addSelectedMembers = addSelectedMembers;
 window.openDeletePlayer = openDeletePlayer;
 window.confirmDeletePlayer = confirmDeletePlayer;
+window.onResultLeagueChange = onResultLeagueChange;
 window.openEditResult = openEditResult;
 window.adminSetResult = adminSetResult;
 window.changePassword = changePassword;

@@ -138,6 +138,7 @@
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     document.getElementById('tab-' + name).classList.add('active');
     document.getElementById('content-' + name).classList.add('active');
+    if (name === 'matrix' && typeof renderMatrix === 'function') renderMatrix();
   }
 </script>
 <script type="module" src="js/app.js"></script>

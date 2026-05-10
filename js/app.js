@@ -197,7 +197,7 @@ function renderMatrix() {
       if (row.id === col.id) { html += '<td class="matrix-self">-</td>'; return; }
       const m = getMatch(row.id, col.id);
       if (!m || !m.result) { html += '<td class="matrix-pending">·</td>'; return; }
-      if (m.result === 'noGame') { html += '<td class="matrix-nogame">미</td>'; return; }
+      if (m.result === 'noGame' || m.result === 'draw') { html += '<td class="matrix-nogame">미</td>'; return; }
       const iWon = (m.result === 'player1' && m.player1Id === row.id) ||
                    (m.result === 'player2' && m.player2Id === row.id);
       html += iWon ? '<td class="matrix-win">승</td>' : '<td class="matrix-loss">패</td>';
@@ -344,5 +344,6 @@ window.loginForEntry = loginForEntry;
 window.logoutEntry = logoutEntry;
 window.openResultModal = openResultModal;
 window.submitResult = submitResult;
+window.renderMatrix = renderMatrix;
 
 init();

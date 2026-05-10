@@ -931,6 +931,95 @@ async function deleteAdminSchedule(scheduleId, playerName) {
   } catch (e) { alert('오류: ' + e.message); }
 }
 
+// ── 게시판 관리 ──────────────────────────────────────────────────────
+let allBoardPosts = [];
+let editBoardPostId = null;
+
+async function loadBoardPosts() {
+  const el = document.getElementById('boardAdminList');
+  if (el) el.innerHTML = '<div class="loading"><span class="spinner"></span></div>';
+  try {
+    const snap = await getDocs(query(collection(db, 'board'), orderBy('createdAt', 'desc')));
+    allBoardPosts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const cnt = document.getElementById('boardPostCount');
+    if (cnt) cnt.textContent = `총 ${allBoardPosts.length}개`;
+    renderBoardAdminList();
+  } catch (e) {
+    if (el) el.innerHTML = `<div class="alert alert-error">불러오기 실패: ${e.message}</div>`;
+  }
+}
+
+function renderBoardAdminList() {
+  const el = document.getElementById('boardAdminList');
+  if (!el) return;
+  if (!allBoardPosts.length) {
+    el.innerHTML = '<div class="empty-state">등록된 게시글이 없습니다</div>';
+    return;
+  }
+  el.innerHTML = allBoardPosts.map(p => {
+    const date = p.createdAt?.toDate ? p.createdAt.toDate().toLocaleDateString('ko-KR') : '';
+    const preview = (p.content || '').replace(/\n/g, ' ').slice(0, 60);
+    return `<div class="match-item">
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:600;margin-bottom:0.2rem;">${p.title}</div>
+        <div style="font-size:0.82rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${preview}</div>
+        <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.2rem;">${date}</div>
+      </div>
+      <div style="display:flex;gap:0.5rem;flex-shrink:0;">
+        <button class="btn btn-sm btn-secondary" onclick="openEditBoardPostModal('${p.id}')">수정</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteBoardPost('${p.id}','${p.title.replace(/'/g,"\\'")}')">삭제</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function addBoardPost() {
+  const title = document.getElementById('boardNewTitle').value.trim();
+  const content = document.getElementById('boardNewContent').value.trim();
+  if (!title) { showAlert('boardWriteAlert', '제목을 입력하세요.'); return; }
+  if (!content) { showAlert('boardWriteAlert', '내용을 입력하세요.'); return; }
+  try {
+    await setDoc(doc(collection(db, 'board')), { title, content, createdAt: serverTimestamp() });
+    document.getElementById('boardNewTitle').value = '';
+    document.getElementById('boardNewContent').value = '';
+    showAlert('boardWriteAlert', '게시글이 등록되었습니다.', 'success');
+    await loadBoardPosts();
+  } catch (e) { showAlert('boardWriteAlert', '오류: ' + e.message); }
+}
+
+async function deleteBoardPost(id, title) {
+  if (!confirm(`"${title}" 게시글을 삭제하시겠습니까?`)) return;
+  try {
+    await deleteDoc(doc(db, 'board', id));
+    await loadBoardPosts();
+  } catch (e) { alert('삭제 오류: ' + e.message); }
+}
+
+function openEditBoardPostModal(id) {
+  const post = allBoardPosts.find(p => p.id === id);
+  if (!post) return;
+  editBoardPostId = id;
+  document.getElementById('editBoardPostId').value = id;
+  document.getElementById('editBoardTitle').value = post.title;
+  document.getElementById('editBoardContent').value = post.content;
+  document.getElementById('boardEditAlert').innerHTML = '';
+  document.getElementById('boardEditModal').classList.add('active');
+}
+
+async function saveEditBoardPost() {
+  const id = document.getElementById('editBoardPostId').value;
+  const title = document.getElementById('editBoardTitle').value.trim();
+  const content = document.getElementById('editBoardContent').value.trim();
+  if (!title) { showAlert('boardEditAlert', '제목을 입력하세요.'); return; }
+  if (!content) { showAlert('boardEditAlert', '내용을 입력하세요.'); return; }
+  try {
+    await updateDoc(doc(db, 'board', id), { title, content });
+    document.getElementById('boardEditModal').classList.remove('active');
+    showAlert('boardWriteAlert', '게시글이 수정되었습니다.', 'success');
+    await loadBoardPosts();
+  } catch (e) { showAlert('boardEditAlert', '오류: ' + e.message); }
+}
+
 // ── 설정 ──────────────────────────────────────────────────────────
 
 async function changePassword() {
@@ -984,5 +1073,10 @@ window.openScheduleEdit = openScheduleEdit;
 window.saveScheduleEdit = saveScheduleEdit;
 window.deleteAdminSchedule = deleteAdminSchedule;
 window.changePassword = changePassword;
+window.loadBoardPosts = loadBoardPosts;
+window.addBoardPost = addBoardPost;
+window.deleteBoardPost = deleteBoardPost;
+window.openEditBoardPostModal = openEditBoardPostModal;
+window.saveEditBoardPost = saveEditBoardPost;
 
 init();

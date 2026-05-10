@@ -1,10 +1,41 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>이전 리그 결과 - 한큐빌리어드 리그</title>
+  <title>당구 강의 게시판 - 한큐빌리어드 리그</title>
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    .board-item {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 0.6rem;
+      overflow: hidden;
+    }
+    .board-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      background: var(--bg-table);
+      transition: background 0.15s;
+    }
+    .board-item-header:hover {
+      background: var(--bg-card);
+    }
+    .board-toggle-arrow {
+      color: var(--gold);
+      font-size: 0.85rem;
+      flex-shrink: 0;
+      margin-left: 0.75rem;
+    }
+    .board-item-body {
+      padding: 1rem;
+      border-top: 1px solid var(--border);
+      background: var(--bg-card);
+    }
+  </style>
 </head>
 <body>
 
@@ -15,9 +46,9 @@
     <div class="nav-links" id="navLinks">
       <a href="index.html" class="nav-link">리그전 현황</a>
       <a href="schedule.html" class="nav-link">경기 일정</a>
-      <a href="history.html" class="nav-link active">이전 리그 결과</a>
+      <a href="history.html" class="nav-link">이전 리그 결과</a>
       <a href="members.html" class="nav-link">회원 목록</a>
-      <a href="lecture.html" class="nav-link">당구 강의 게시판</a>
+      <a href="lecture.html" class="nav-link active">당구 강의 게시판</a>
       <a href="admin.html" class="nav-link">관리자</a>
       <a href="login.html" class="nav-link" id="navLoginBtn" style="display:none;">로그인</a>
       <a href="profile.html" id="navUserName" class="nav-user-name nav-link" style="display:none;">정보 변경</a>
@@ -35,23 +66,16 @@
 </script>
 
 <div class="container">
-
   <div class="card">
     <div class="card-header">
-      <div class="card-title">이전 리그 결과</div>
+      <div class="card-title">당구 강의 게시판</div>
     </div>
-    <div class="form-group">
-      <label class="form-label">리그 선택</label>
-      <select class="form-control" id="leagueSelect" onchange="onLeagueSelect()">
-        <option value="">불러오는 중...</option>
-      </select>
+    <div id="boardList">
+      <div class="loading"><span class="spinner"></span></div>
     </div>
   </div>
-
-  <div id="historyContent"></div>
-
 </div>
 
-<script type="module" src="js/history.js"></script>
+<script type="module" src="js/lecture.js"></script>
 </body>
 </html>

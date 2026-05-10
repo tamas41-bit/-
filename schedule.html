@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>매칭 요청 - 한큐빌리어드 리그</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a class="navbar-brand" href="index.html">🎱 한큐빌리어드</a>
+    <button class="nav-toggle" onclick="document.getElementById('navLinks').classList.toggle('open')">☰</button>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html" class="nav-link">순위표</a>
+      <a href="schedule.html" class="nav-link active">매칭 요청</a>
+      <a href="admin.html" class="nav-link">관리자</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <div class="tabs">
+    <div class="tab active" id="stab-list"    onclick="switchScheduleTab('list')">📅 일정 목록</div>
+    <div class="tab"        id="stab-post"    onclick="switchScheduleTab('post')">➕ 내 일정 등록</div>
+    <div class="tab"        id="stab-requests" onclick="switchScheduleTab('requests')">📬 요청 관리</div>
+  </div>
+
+  <!-- 일정 목록 -->
+  <div class="tab-content active" id="scontent-list">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📅 게임 가능 일정</div>
+        <span style="font-size:0.78rem;color:var(--text-muted)">모집 중인 일정입니다</span>
+      </div>
+      <div id="scheduleListContent"><div class="loading"><span class="spinner"></span></div></div>
+    </div>
+  </div>
+
+  <!-- 내 일정 등록 -->
+  <div class="tab-content" id="scontent-post">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">➕ 내 일정 등록</div>
+      </div>
+
+      <!-- 로그인 영역 -->
+      <div id="scheduleLoginArea">
+        <div class="alert alert-info" style="margin-bottom:1rem;">본인 인증 후 일정을 등록할 수 있습니다.</div>
+        <div class="form-group">
+          <label class="form-label">본인 이름</label>
+          <select class="form-control" id="schedulePlayerSelect">
+            <option value="">-- 이름을 선택하세요 --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">PIN 번호</label>
+          <input type="password" class="form-control" id="schedulePin" maxlength="4" placeholder="4자리 숫자" inputmode="numeric" onkeydown="if(event.key==='Enter')loginForSchedule()">
+        </div>
+        <div id="scheduleLoginAlert"></div>
+        <button class="btn btn-primary btn-full" onclick="loginForSchedule()">확인</button>
+      </div>
+
+      <!-- 등록 폼 영역 -->
+      <div id="scheduleFormArea" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+          <div><span style="font-size:1.05rem;font-weight:bold;color:var(--gold)" id="scheduleLoggedInName"></span></div>
+          <button class="btn btn-secondary btn-sm" onclick="logoutSchedule()">로그아웃</button>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">날짜</label>
+          <input type="date" class="form-control" id="scheduleDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">시간</label>
+          <input type="time" class="form-control" id="scheduleTime">
+        </div>
+        <div class="form-group">
+          <label class="form-label">메모 (선택)</label>
+          <input type="text" class="form-control" id="scheduleNote" placeholder="예: 강남점, 오후 7시 이후 가능 등">
+        </div>
+        <div id="scheduleFormAlert"></div>
+        <button class="btn btn-gold btn-full" onclick="postSchedule()">일정 등록</button>
+
+        <div style="margin-top:1.5rem;">
+          <div style="color:var(--gold);font-weight:600;font-size:0.9rem;margin-bottom:0.5rem;">내 등록 일정</div>
+          <div id="myScheduleList"><div class="loading"><span class="spinner"></span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 요청 관리 -->
+  <div class="tab-content" id="scontent-requests">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📬 요청 관리</div>
+      </div>
+
+      <!-- 로그인 영역 -->
+      <div id="requestsLoginArea">
+        <div class="alert alert-info" style="margin-bottom:1rem;">본인 인증 후 요청을 확인할 수 있습니다.</div>
+        <div class="form-group">
+          <label class="form-label">본인 이름</label>
+          <select class="form-control" id="requestsPlayerSelect">
+            <option value="">-- 이름을 선택하세요 --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">PIN 번호</label>
+          <input type="password" class="form-control" id="requestsPin" maxlength="4" placeholder="4자리 숫자" inputmode="numeric" onkeydown="if(event.key==='Enter')loginForRequests()">
+        </div>
+        <div id="requestsLoginAlert"></div>
+        <button class="btn btn-primary btn-full" onclick="loginForRequests()">확인</button>
+      </div>
+
+      <!-- 요청 목록 영역 -->
+      <div id="requestsArea" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+          <div><span style="font-size:1.05rem;font-weight:bold;color:var(--gold)" id="requestsLoggedInName"></span></div>
+          <button class="btn btn-secondary btn-sm" onclick="logoutRequests()">로그아웃</button>
+        </div>
+        <div id="requestsList"><div class="loading"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 매칭 요청 모달 -->
+<div class="modal-overlay" id="requestModal">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('requestModal').classList.remove('active')">✕</button>
+    <div class="modal-title">매칭 요청</div>
+    <div id="requestModalInfo" style="margin-bottom:1.25rem;color:var(--text-secondary);font-size:0.9rem;"></div>
+    <div id="requestModalAlert"></div>
+    <div class="form-group">
+      <label class="form-label">내 이름</label>
+      <select class="form-control" id="requestMyName">
+        <option value="">-- 이름을 선택하세요 --</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">내 PIN</label>
+      <input type="password" class="form-control" id="requestMyPin" maxlength="4" placeholder="4자리 숫자" inputmode="numeric">
+    </div>
+    <div class="form-group">
+      <label class="form-label">메시지 (선택)</label>
+      <input type="text" class="form-control" id="requestMessage" placeholder="예: 해당 시간 가능합니다!">
+    </div>
+    <button class="btn btn-gold btn-full" onclick="submitMatchRequest()">요청 보내기</button>
+  </div>
+</div>
+
+<script>
+  function switchScheduleTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('stab-' + name).classList.add('active');
+    document.getElementById('scontent-' + name).classList.add('active');
+  }
+</script>
+<script type="module" src="js/schedule.js"></script>
+</body>
+</html>

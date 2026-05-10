@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>관리자 - 한큐빌리어드 리그</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a class="navbar-brand" href="index.html">🎱 한큐빌리어드</a>
+    <button class="nav-toggle" onclick="document.getElementById('navLinks').classList.toggle('open')">☰</button>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html" class="nav-link">순위표</a>
+      <a href="schedule.html" class="nav-link">매칭 요청</a>
+      <a href="admin.html" class="nav-link active">관리자</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- 로그인 -->
+  <div id="adminLogin" class="card" style="max-width:420px;margin:2rem auto;">
+    <div class="card-header">
+      <div class="card-title">🔐 관리자 로그인</div>
+    </div>
+    <div id="setupNotice" style="display:none;" class="alert alert-info">처음 사용 시 관리자 비밀번호를 설정하세요.</div>
+    <div id="adminLoginAlert"></div>
+    <div class="form-group">
+      <label class="form-label">비밀번호</label>
+      <input type="password" class="form-control" id="adminPasswordInput" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')adminLogin()">
+    </div>
+    <button class="btn btn-gold btn-full" id="adminLoginBtn" onclick="adminLogin()">로그인</button>
+  </div>
+
+  <!-- 관리자 패널 -->
+  <div id="adminPanel" style="display:none;">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
+      <h2 style="color:var(--gold)">⚙️ 관리자 패널</h2>
+      <button class="btn btn-secondary btn-sm" onclick="adminLogout()">로그아웃</button>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" id="atab-league" onclick="switchAdminTab('league')">리그 관리</div>
+      <div class="tab" id="atab-players" onclick="switchAdminTab('players')">선수 관리</div>
+      <div class="tab" id="atab-results" onclick="switchAdminTab('results')">결과 수정</div>
+      <div class="tab" id="atab-settings" onclick="switchAdminTab('settings')">설정</div>
+    </div>
+
+    <!-- 리그 관리 -->
+    <div class="tab-content active" id="acontent-league">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📋 현재 리그</div>
+          <span id="currentLeagueBadge"></span>
+        </div>
+        <div id="currentLeagueInfo"><div class="loading"><span class="spinner"></span></div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">➕ 새 리그 시작</div>
+        </div>
+        <div class="alert alert-info">새 리그를 시작하면 현재 리그는 종료됩니다.</div>
+        <div class="form-group" style="margin-top:0.75rem;">
+          <label class="form-label">리그 이름</label>
+          <input type="text" class="form-control" id="leagueName" placeholder="예: 2026년 6월 리그">
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">승 승점</label>
+            <input type="number" class="form-control" id="scoreWin" value="3" min="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">패 승점</label>
+            <input type="number" class="form-control" id="scoreLoss" value="0" min="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">미경기 승점</label>
+            <input type="number" class="form-control" id="scoreNoGame" value="0" min="0">
+          </div>
+        </div>
+        <div id="createLeagueAlert"></div>
+        <button class="btn btn-gold btn-full" onclick="createLeague()">리그 생성</button>
+      </div>
+    </div>
+
+    <!-- 선수 관리 -->
+    <div class="tab-content" id="acontent-players">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">👥 선수 관리</div>
+          <span id="playerCount" style="font-size:0.85rem;color:var(--text-muted)"></span>
+        </div>
+        <div id="playerAlert"></div>
+
+        <!-- 선수 추가 -->
+        <div style="display:flex;gap:0.6rem;margin-bottom:0.75rem;flex-wrap:wrap;">
+          <input type="text" class="form-control" id="newPlayerName" placeholder="이름" style="flex:1;min-width:120px;">
+          <input type="text" class="form-control" id="newPlayerPin" placeholder="PIN 4자리" maxlength="4" inputmode="numeric" style="width:110px;">
+          <button class="btn btn-primary" onclick="addPlayer()">추가</button>
+        </div>
+
+        <button class="btn btn-secondary btn-sm" style="margin-bottom:1rem;" onclick="importPrevPlayers()">
+          이전 리그 참가자 불러오기
+        </button>
+
+        <div id="playerList"><div class="loading"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+
+    <!-- 결과 수정 -->
+    <div class="tab-content" id="acontent-results">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔧 경기 결과 수정</div>
+        </div>
+        <p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;">관리자 권한으로 결과를 직접 수정하거나 초기화할 수 있습니다.</p>
+        <div id="adminMatchList"><div class="loading"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+
+    <!-- 설정 -->
+    <div class="tab-content" id="acontent-settings">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔑 관리자 비밀번호 변경</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">현재 비밀번호</label>
+          <input type="password" class="form-control" id="currentPassword" placeholder="현재 비밀번호">
+        </div>
+        <div class="form-group">
+          <label class="form-label">새 비밀번호</label>
+          <input type="password" class="form-control" id="newPassword" placeholder="새 비밀번호">
+        </div>
+        <div class="form-group">
+          <label class="form-label">새 비밀번호 확인</label>
+          <input type="password" class="form-control" id="confirmPassword" placeholder="새 비밀번호 확인">
+        </div>
+        <div id="passwordAlert"></div>
+        <button class="btn btn-primary" onclick="changePassword()">비밀번호 변경</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 결과 수정 모달 -->
+<div class="modal-overlay" id="editResultModal">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('editResultModal').classList.remove('active')">✕</button>
+    <div class="modal-title">결과 수정</div>
+    <div id="editModalInfo" style="margin-bottom:1.25rem;color:var(--text-secondary);"></div>
+    <div id="editModalAlert"></div>
+    <input type="hidden" id="editMatchId">
+    <input type="hidden" id="editPlayer1Id">
+    <input type="hidden" id="editPlayer2Id">
+    <div style="display:flex;flex-direction:column;gap:0.65rem;">
+      <button class="btn btn-primary btn-full" id="editBtnP1Win" onclick="adminSetResult('player1')"></button>
+      <button class="btn btn-primary btn-full" id="editBtnP2Win" onclick="adminSetResult('player2')"></button>
+      <button class="btn btn-secondary btn-full" onclick="adminSetResult('noGame')">미경기 처리</button>
+      <button class="btn btn-secondary btn-full" onclick="adminSetResult(null)">결과 초기화 (미진행)</button>
+    </div>
+  </div>
+</div>
+
+<!-- 선수 삭제 모달 -->
+<div class="modal-overlay" id="deletePlayerModal">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('deletePlayerModal').classList.remove('active')">✕</button>
+    <div class="modal-title">선수 삭제</div>
+    <div id="deletePlayerInfo" style="margin-bottom:1.25rem;color:var(--text-secondary);font-size:0.9rem;"></div>
+    <div style="display:flex;gap:0.65rem;">
+      <button class="btn btn-danger btn-full" onclick="confirmDeletePlayer()">삭제</button>
+      <button class="btn btn-secondary btn-full" onclick="document.getElementById('deletePlayerModal').classList.remove('active')">취소</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function switchAdminTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('atab-' + name).classList.add('active');
+    document.getElementById('acontent-' + name).classList.add('active');
+  }
+</script>
+<script type="module" src="js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>한큐빌리어드 리그</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a class="navbar-brand" href="index.html">🎱 한큐빌리어드</a>
+    <button class="nav-toggle" onclick="document.getElementById('navLinks').classList.toggle('open')">☰</button>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html" class="nav-link active">순위표</a>
+      <a href="schedule.html" class="nav-link">매칭 요청</a>
+      <a href="admin.html" class="nav-link">관리자</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <div id="leagueBanner"><div class="loading"><span class="spinner"></span> 불러오는 중...</div></div>
+
+  <div class="tabs">
+    <div class="tab active" id="tab-standings" onclick="switchTab('standings')">🏆 순위표</div>
+    <div class="tab" id="tab-matrix" onclick="switchTab('matrix')">📊 대진표</div>
+    <div class="tab" id="tab-entry" onclick="switchTab('entry')">✏️ 결과 입력</div>
+  </div>
+
+  <!-- 순위표 -->
+  <div class="tab-content active" id="content-standings">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🏆 순위표</div>
+        <span id="lastUpdated" style="font-size:0.78rem;color:var(--text-muted)"></span>
+      </div>
+      <div class="table-scroll">
+        <table class="standings-table">
+          <thead>
+            <tr>
+              <th>순위</th><th>이름</th><th>승</th><th>패</th><th>미경기</th><th>승점</th><th>진행률</th>
+            </tr>
+          </thead>
+          <tbody id="standingsBody">
+            <tr><td colspan="7"><div class="loading"><span class="spinner"></span></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 대진표 -->
+  <div class="tab-content" id="content-matrix">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📊 대진표</div>
+        <span style="font-size:0.78rem;color:var(--text-muted)">행=나, 열=상대 | 승/패/미</span>
+      </div>
+      <div class="table-scroll" id="matrixContainer">
+        <div class="loading"><span class="spinner"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 결과 입력 -->
+  <div class="tab-content" id="content-entry">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">✏️ 경기 결과 입력</div>
+      </div>
+
+      <!-- 로그인 단계 -->
+      <div id="entryStep1">
+        <div class="alert alert-info">패자가 결과를 입력하면 승자 결과도 자동 업데이트됩니다.</div>
+        <div class="form-group">
+          <label class="form-label">본인 이름</label>
+          <select class="form-control" id="entryPlayerSelect">
+            <option value="">-- 이름을 선택하세요 --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">PIN 번호 (휴대폰 뒷 4자리)</label>
+          <input type="password" class="form-control" id="entryPin" maxlength="4" placeholder="4자리 숫자" inputmode="numeric" onkeydown="if(event.key==='Enter')loginForEntry()">
+        </div>
+        <div id="entryLoginAlert"></div>
+        <button class="btn btn-primary btn-full" onclick="loginForEntry()">확인</button>
+      </div>
+
+      <!-- 경기 목록 단계 -->
+      <div id="entryStep2" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+          <div><span style="font-size:1.05rem;font-weight:bold;color:var(--gold)" id="loggedInName"></span> 님</div>
+          <button class="btn btn-secondary btn-sm" onclick="logoutEntry()">로그아웃</button>
+        </div>
+        <div class="progress-bar" style="margin-bottom:0.3rem;"><div class="progress-fill" id="entryProgress" style="width:0%"></div></div>
+        <div style="text-align:right;font-size:0.78rem;color:var(--text-muted);margin-bottom:1rem" id="entryProgressText"></div>
+        <div id="entryMatchList"><div class="loading"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 결과 입력 모달 -->
+<div class="modal-overlay" id="resultModal">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('resultModal').classList.remove('active')">✕</button>
+    <div class="modal-title">경기 결과 입력</div>
+    <div id="modalMatchInfo" style="margin-bottom:1.25rem;color:var(--text-secondary);"></div>
+    <div id="modalAlert"></div>
+    <div style="display:flex;flex-direction:column;gap:0.75rem;">
+      <button class="btn btn-danger btn-full" onclick="submitResult('loss')">상대방이 이겼습니다 (내가 졌습니다)</button>
+      <button class="btn btn-secondary btn-full" onclick="submitResult('noGame')">경기를 진행하지 못했습니다</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    document.getElementById('content-' + name).classList.add('active');
+  }
+</script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

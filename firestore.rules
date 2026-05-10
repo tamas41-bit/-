@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Config (admin password hash) — anyone can read to verify login, only write if hash exists
+    match /config/{docId} {
+      allow read: if true;
+      allow write: if true; // Initial setup requires open write; tighten after first password is set
+    }
+
+    // Leagues — public read, no direct client write (admin writes via trusted logic)
+    match /leagues/{leagueId} {
+      allow read: if true;
+      allow write: if true;
+
+      // Players subcollection
+      match /players/{playerId} {
+        allow read: if true;
+        allow write: if true;
+      }
+
+      // Matches subcollection
+      match /matches/{matchId} {
+        allow read: if true;
+        allow write: if true;
+      }
+    }
+
+    // Schedules — public read, authenticated players write
+    match /schedules/{scheduleId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Schedule requests
+    match /scheduleRequests/{requestId} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}

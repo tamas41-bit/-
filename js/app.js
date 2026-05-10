@@ -202,7 +202,7 @@ function renderMatrix() {
         if (m && m.matchType === 'bo3' && m.seriesScore) {
           const myS = m.player1Id === row.id ? m.seriesScore.player1 : m.seriesScore.player2;
           const oppS = m.player1Id === row.id ? m.seriesScore.player2 : m.seriesScore.player1;
-          html += `<td class="matrix-pending" title="진행중">${myS}-${oppS}</td>`;
+          html += `<td class="matrix-bo3-inprogress" title="진행중">${myS}-${oppS}</td>`;
         } else {
           html += '<td class="matrix-pending">·</td>';
         }

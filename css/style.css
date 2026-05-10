@@ -101,11 +101,13 @@ body {
 .standings-table th, .matrix-table th {
   background: #0a2e0a; color: var(--gold);
   padding: 0.65rem 0.9rem; text-align: center; border: 1px solid var(--border);
+  white-space: nowrap;
 }
 .standings-table th:first-child { text-align: left; }
 .standings-table td {
   padding: 0.65rem 0.9rem; text-align: center;
   border: 1px solid var(--border); background: var(--bg-table);
+  white-space: nowrap;
 }
 .standings-table td:first-child { text-align: left; }
 .standings-table tr:hover td { background: #2e2e2e; }
@@ -135,6 +137,7 @@ body {
 .matrix-nogame { background: rgba(117,117,117,0.15) !important; color: #9e9e9e; }
 .matrix-self { background: #1a1a1a !important; }
 .matrix-pending { color: #333; }
+.matrix-bo3-inprogress { background: rgba(255,165,0,0.15) !important; color: #ffb74d; font-weight: bold; }
 
 /* Forms */
 .form-group { margin-bottom: 1rem; }

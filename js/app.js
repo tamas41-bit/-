@@ -13,6 +13,8 @@ let pendingMatchId = null;
 let pendingOpponentId = null;
 let pendingOpponentName = null;
 let unsubscribeMatches = null;
+let matchMode = 'single';
+let bo3Games = [];
 
 async function init() {
   try {
@@ -200,7 +202,15 @@ function renderMatrix() {
       if (m.result === 'noGame' || m.result === 'draw') { html += '<td class="matrix-nogame">미</td>'; return; }
       const iWon = (m.result === 'player1' && m.player1Id === row.id) ||
                    (m.result === 'player2' && m.player2Id === row.id);
-      html += iWon ? '<td class="matrix-win">승</td>' : '<td class="matrix-loss">패</td>';
+      if (m.matchType === 'bo3' && m.seriesScore) {
+        const myScore = m.player1Id === row.id ? m.seriesScore.player1 : m.seriesScore.player2;
+        const oppScore = m.player1Id === row.id ? m.seriesScore.player2 : m.seriesScore.player1;
+        html += iWon
+          ? `<td class="matrix-win">${myScore}-${oppScore}</td>`
+          : `<td class="matrix-loss">${myScore}-${oppScore}</td>`;
+      } else {
+        html += iWon ? '<td class="matrix-win">승</td>' : '<td class="matrix-loss">패</td>';
+      }
     });
     html += '</tr>';
   });
@@ -287,9 +297,16 @@ function renderEntryList() {
     } else {
       const myWin = (m.result === 'player1' && m.player1Id === loggedInPlayer.id) ||
                     (m.result === 'player2' && m.player2Id === loggedInPlayer.id);
+      let scoreLabel = '';
+      if (m.matchType === 'bo3' && m.seriesScore) {
+        const isP1 = m.player1Id === loggedInPlayer.id;
+        const myS = isP1 ? m.seriesScore.player1 : m.seriesScore.player2;
+        const oppS = isP1 ? m.seriesScore.player2 : m.seriesScore.player1;
+        scoreLabel = ` ${myS}-${oppS}`;
+      }
       statusHtml = myWin
-        ? '<span class="match-status status-win">승리 ✓</span>'
-        : '<span class="match-status status-loss">패배</span>';
+        ? `<span class="match-status status-win">승리${scoreLabel} ✓</span>`
+        : `<span class="match-status status-loss">패배${scoreLabel}</span>`;
       actionHtml = editBtn;
     }
     return `<div class="match-item">
@@ -310,7 +327,89 @@ function openResultModal(matchId, oppId, oppName) {
   document.getElementById('modalMatchInfo').innerHTML =
     `<strong>${loggedInPlayer.name}</strong> vs <strong>${oppName}</strong>`;
   document.getElementById('modalAlert').innerHTML = '';
+  matchMode = 'single';
+  bo3Games = [];
+  setMatchMode('single');
   document.getElementById('resultModal').classList.add('active');
+}
+
+function setMatchMode(mode) {
+  matchMode = mode;
+  document.getElementById('modeBtn-single').className = `btn btn-sm ${mode === 'single' ? 'btn-primary' : 'btn-secondary'}`;
+  document.getElementById('modeBtn-bo3').className = `btn btn-sm ${mode === 'bo3' ? 'btn-primary' : 'btn-secondary'}`;
+  document.getElementById('modeSingle').style.display = mode === 'single' ? 'flex' : 'none';
+  document.getElementById('modeBo3').style.display = mode === 'bo3' ? 'block' : 'none';
+  if (mode === 'bo3') { bo3Games = []; renderBo3UI(); }
+}
+
+function renderBo3UI() {
+  const myWins = bo3Games.filter(g => g === 'me').length;
+  const oppWins = bo3Games.filter(g => g === 'opp').length;
+  const gameNum = bo3Games.length + 1;
+
+  document.getElementById('bo3ScoreDisplay').innerHTML =
+    `<span style="color:var(--gold)">${myWins}</span><span style="color:var(--text-muted);font-size:1rem;margin:0 0.5rem">:</span><span style="color:#ef5350">${oppWins}</span>`;
+
+  let html = '';
+  bo3Games.forEach((g, i) => {
+    const isMe = g === 'me';
+    html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--border);">
+      <span style="color:var(--text-muted);font-size:0.85rem;">${i + 1}세트</span>
+      <span style="font-weight:600;color:${isMe ? 'var(--gold)' : '#ef5350'}">${isMe ? loggedInPlayer.name : pendingOpponentName} 승</span>
+    </div>`;
+  });
+
+  if (myWins < 2 && oppWins < 2 && gameNum <= 3) {
+    html += `<div style="margin-top:0.85rem;">
+      <div style="text-align:center;color:var(--text-muted);font-size:0.85rem;margin-bottom:0.6rem;">${gameNum}세트</div>
+      <div style="display:flex;gap:0.5rem;">
+        <button class="btn btn-primary btn-full" onclick="addBo3Game('me')">${loggedInPlayer.name} 승</button>
+        <button class="btn btn-danger btn-full" onclick="addBo3Game('opp')">${pendingOpponentName} 승</button>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('bo3Games').innerHTML = html;
+}
+
+function addBo3Game(winner) {
+  bo3Games.push(winner);
+  const myWins = bo3Games.filter(g => g === 'me').length;
+  const oppWins = bo3Games.filter(g => g === 'opp').length;
+  if (myWins === 2) { submitBo3Result('win', myWins, oppWins); }
+  else if (oppWins === 2) { submitBo3Result('loss', myWins, oppWins); }
+  else { renderBo3UI(); }
+}
+
+async function submitBo3Result(type, myWins, oppWins) {
+  if (!pendingMatchId || !loggedInPlayer) return;
+  const m = allMatches.find(x => x.id === pendingMatchId);
+  if (!m) return;
+
+  let result, winnerId;
+  if (type === 'win') {
+    result = m.player1Id === loggedInPlayer.id ? 'player1' : 'player2';
+    winnerId = loggedInPlayer.id;
+  } else {
+    result = m.player1Id === pendingOpponentId ? 'player1' : 'player2';
+    winnerId = pendingOpponentId;
+  }
+
+  const isP1 = m.player1Id === loggedInPlayer.id;
+  const seriesScore = {
+    player1: isP1 ? myWins : oppWins,
+    player2: isP1 ? oppWins : myWins
+  };
+
+  try {
+    await updateDoc(doc(db, 'leagues', activeLeague.id, 'matches', pendingMatchId), {
+      result, winnerId, matchType: 'bo3', seriesScore,
+      reportedBy: loggedInPlayer.id, reportedAt: new Date()
+    });
+    document.getElementById('resultModal').classList.remove('active');
+  } catch (e) {
+    showAlert('modalAlert', '저장 오류: ' + e.message);
+  }
 }
 
 async function submitResult(type) {
@@ -343,6 +442,8 @@ window.onLeagueSelectorChange = onLeagueSelectorChange;
 window.loginForEntry = loginForEntry;
 window.logoutEntry = logoutEntry;
 window.openResultModal = openResultModal;
+window.setMatchMode = setMatchMode;
+window.addBo3Game = addBo3Game;
 window.submitResult = submitResult;
 window.renderMatrix = renderMatrix;
 

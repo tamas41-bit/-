@@ -85,21 +85,11 @@
         <div class="card-title">✏️ 경기 결과 입력</div>
       </div>
 
-      <!-- 로그인 단계 -->
-      <div id="entryStep1">
-        <div class="alert alert-info">패자가 결과를 입력하면 승자 결과도 자동 업데이트됩니다.</div>
-        <div class="form-group">
-          <label class="form-label">본인 이름</label>
-          <select class="form-control" id="entryPlayerSelect">
-            <option value="">-- 이름을 선택하세요 --</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">PIN 번호 (휴대폰 뒷 4자리)</label>
-          <input type="password" class="form-control" id="entryPin" maxlength="4" placeholder="4자리 숫자" inputmode="numeric" onkeydown="if(event.key==='Enter')loginForEntry()">
-        </div>
-        <div id="entryLoginAlert"></div>
-        <button class="btn btn-primary btn-full" onclick="loginForEntry()">확인</button>
+      <!-- 로그인 유도 -->
+      <div id="entryStep1" style="text-align:center;padding:1.5rem 0;">
+        <div style="font-size:2rem;margin-bottom:0.75rem;">🔐</div>
+        <div style="color:var(--text-secondary);margin-bottom:1.5rem;">결과 입력은 로그인 후 이용할 수 있습니다.</div>
+        <a href="login.html" class="btn btn-primary" style="display:inline-block;padding:0.65rem 2.5rem;font-size:1rem;">로그인</a>
       </div>
 
       <!-- 경기 목록 단계 -->
@@ -122,12 +112,28 @@
   <div class="modal">
     <button class="modal-close" onclick="document.getElementById('resultModal').classList.remove('active')">✕</button>
     <div class="modal-title">경기 결과 입력</div>
-    <div id="modalMatchInfo" style="margin-bottom:1.25rem;color:var(--text-secondary);"></div>
+    <div id="modalMatchInfo" style="margin-bottom:1rem;color:var(--text-secondary);"></div>
     <div id="modalAlert"></div>
-    <div style="display:flex;flex-direction:column;gap:0.75rem;">
+
+    <!-- 방식 선택 -->
+    <div style="display:flex;gap:0.5rem;margin-bottom:1.25rem;">
+      <button id="modeBtn-single" class="btn btn-sm btn-primary" style="flex:1" onclick="setMatchMode('single')">단판</button>
+      <button id="modeBtn-bo3" class="btn btn-sm btn-secondary" style="flex:1" onclick="setMatchMode('bo3')">3판 2선승제</button>
+    </div>
+
+    <!-- 단판 -->
+    <div id="modeSingle" style="display:flex;flex-direction:column;gap:0.75rem;">
       <button class="btn btn-primary btn-full" onclick="submitResult('win')">본인 승리</button>
       <button class="btn btn-danger btn-full" onclick="submitResult('loss')">상대 승리</button>
       <button class="btn btn-secondary btn-full" onclick="submitResult('draw')">경기 미진행</button>
+    </div>
+
+    <!-- 3판 2선승제 -->
+    <div id="modeBo3" style="display:none;">
+      <div id="bo3ScoreDisplay" style="text-align:center;font-size:2rem;font-weight:bold;margin-bottom:1rem;padding:0.6rem;background:var(--bg-table);border-radius:8px;letter-spacing:0.1em;">
+        0 : 0
+      </div>
+      <div id="bo3Games"></div>
     </div>
   </div>
 </div>

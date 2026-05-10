@@ -222,19 +222,9 @@ function resetEntryUI() {
   loggedInPlayer = null;
   document.getElementById('entryStep1').style.display = 'block';
   document.getElementById('entryStep2').style.display = 'none';
-  document.getElementById('entryPin').value = '';
-  document.getElementById('entryLoginAlert').innerHTML = '';
 }
 
-function populatePlayerSelect() {
-  const sel = document.getElementById('entryPlayerSelect');
-  sel.innerHTML = '<option value="">-- 이름을 선택하세요 --</option>';
-  allPlayers.forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p.id; opt.textContent = p.name;
-    sel.appendChild(opt);
-  });
-}
+function populatePlayerSelect() {}
 
 function setEntryLoggedIn(player) {
   loggedInPlayer = player;
@@ -245,18 +235,7 @@ function setEntryLoggedIn(player) {
   renderEntryList();
 }
 
-async function loginForEntry() {
-  const pid = document.getElementById('entryPlayerSelect').value;
-  const pin = document.getElementById('entryPin').value.trim();
-  if (!pid) { showAlert('entryLoginAlert', '이름을 선택하세요.'); return; }
-  if (!/^\d{4}$/.test(pin)) { showAlert('entryLoginAlert', 'PIN은 숫자 4자리입니다.'); return; }
-
-  const player = allPlayers.find(p => p.id === pid);
-  if (!player) { showAlert('entryLoginAlert', '선수 정보를 찾을 수 없습니다.'); return; }
-  if (await hashString(pin) !== player.pinHash) { showAlert('entryLoginAlert', 'PIN이 올바르지 않습니다.'); return; }
-
-  setEntryLoggedIn(player);
-}
+function loginForEntry() {}
 
 function logoutEntry() {
   localStorage.removeItem('hankyu_player');

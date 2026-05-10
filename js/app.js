@@ -282,7 +282,7 @@ function renderEntryList() {
       statusHtml = '<span class="match-status status-pending">미진행</span>';
       actionHtml = `<button class="btn btn-sm btn-danger" onclick="openResultModal('${m.id}','${oppId}','${oppName}')">결과 입력</button>`;
     } else if (m.result === 'draw' || m.result === 'noGame') {
-      statusHtml = '<span class="match-status status-nogame">무승부</span>';
+      statusHtml = '<span class="match-status status-nogame">미진행</span>';
       actionHtml = editBtn;
     } else {
       const myWin = (m.result === 'player1' && m.player1Id === loggedInPlayer.id) ||
@@ -309,8 +309,6 @@ function openResultModal(matchId, oppId, oppName) {
   pendingOpponentName = oppName;
   document.getElementById('modalMatchInfo').innerHTML =
     `<strong>${loggedInPlayer.name}</strong> vs <strong>${oppName}</strong>`;
-  document.getElementById('modalBtnMyWin').textContent = `${loggedInPlayer.name} 승리`;
-  document.getElementById('modalBtnOppWin').textContent = `${oppName} 승리`;
   document.getElementById('modalAlert').innerHTML = '';
   document.getElementById('resultModal').classList.add('active');
 }

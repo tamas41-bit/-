@@ -26,6 +26,9 @@ let editScheduleData = null;
 let editHandicapMemberId = null;
 let editPinMemberId = null;
 let editLeagueId = null;
+let resultPlayers = [];
+let resultMatches = [];
+let selectedResultPlayerId = null;
 
 async function init() {
   const cfg = await getDoc(doc(db, 'config', 'settings'));
@@ -151,7 +154,8 @@ async function endLeague(leagueId, leagueName) {
   }
   if (resultLeague?.id === leagueId) {
     resultLeague = null;
-    renderResultTab([], []);
+    resultPlayers = []; resultMatches = []; selectedResultPlayerId = null;
+    renderResultTab();
   }
   await loadLeagues();
 }
@@ -485,38 +489,81 @@ async function onResultLeagueChange() {
 
 async function loadResultData() {
   if (!resultLeague) return;
+  const prevSelected = selectedResultPlayerId;
   const [ps, ms] = await Promise.all([
     getDocs(collection(db, 'leagues', resultLeague.id, 'players')),
     getDocs(collection(db, 'leagues', resultLeague.id, 'matches'))
   ]);
-  const players = ps.docs.map(d => ({ id: d.id, ...d.data() }));
-  const matches = ms.docs.map(d => ({ id: d.id, ...d.data() }));
-  renderResultTab(players, matches);
+  resultPlayers = ps.docs.map(d => ({ id: d.id, ...d.data() }));
+  resultMatches = ms.docs.map(d => ({ id: d.id, ...d.data() }));
+  if (prevSelected && resultPlayers.find(p => p.id === prevSelected)) {
+    selectedResultPlayerId = prevSelected;
+    renderResultPlayerMatches();
+  } else {
+    selectedResultPlayerId = null;
+    renderResultTab();
+  }
 }
 
-function renderResultTab(players = [], matches = []) {
+function renderResultTab() {
   const el = document.getElementById('adminMatchList');
   if (!resultLeague) { el.innerHTML = ''; return; }
-  if (!matches.length) { el.innerHTML = '<div class="empty-state">경기가 없습니다</div>'; return; }
+  if (!resultPlayers.length) { el.innerHTML = '<div class="empty-state">선수가 없습니다</div>'; return; }
 
-  const sorted = [...matches].sort((a, b) => (a.result ? 1 : 0) - (b.result ? 1 : 0));
-  el.innerHTML = sorted.map(m => {
-    const p1 = players.find(p => p.id === m.player1Id);
-    const p2 = players.find(p => p.id === m.player2Id);
-    const p1n = p1?.name || '?', p2n = p2?.name || '?';
-    let resultText = '미진행', resultStyle = 'color:var(--text-muted)';
-    if (m.result === 'player1') { resultText = `${p1n} 승`; resultStyle = 'color:#81c784'; }
-    else if (m.result === 'player2') { resultText = `${p2n} 승`; resultStyle = 'color:#81c784'; }
-    else if (m.result === 'draw') { resultText = '무승부'; resultStyle = 'color:#9e9e9e'; }
-    else if (m.result === 'noGame') { resultText = '미경기'; resultStyle = 'color:#9e9e9e'; }
-    return `<div class="match-item">
-      <div>
-        <div class="match-vs"><span class="player-name">${p1n}</span><span class="vs-badge">vs</span><span class="player-name">${p2n}</span></div>
-        <div style="font-size:0.82rem;margin-top:0.2rem;${resultStyle}">${resultText}</div>
-      </div>
-      <button class="btn btn-sm btn-secondary" onclick="openEditResult('${m.id}','${m.player1Id}','${m.player2Id}','${p1n}','${p2n}')">수정</button>
+  el.innerHTML = resultPlayers.map(p => {
+    const myMatches = resultMatches.filter(m => m.player1Id === p.id || m.player2Id === p.id);
+    const played = myMatches.filter(m => m.result).length;
+    const total = myMatches.length;
+    const allDone = played === total;
+    return `<div class="player-row" style="cursor:pointer;" onclick="selectResultPlayer('${p.id}')">
+      <strong>${p.name}</strong>
+      <span style="color:${allDone ? '#81c784' : 'var(--text-muted)'};font-size:0.85rem;">${played}/${total} 완료</span>
     </div>`;
   }).join('');
+}
+
+function selectResultPlayer(playerId) {
+  selectedResultPlayerId = playerId;
+  renderResultPlayerMatches();
+}
+
+function renderResultPlayerMatches() {
+  const el = document.getElementById('adminMatchList');
+  const player = resultPlayers.find(p => p.id === selectedResultPlayerId);
+  if (!player) { renderResultTab(); return; }
+
+  const myMatches = resultMatches.filter(m => m.player1Id === player.id || m.player2Id === player.id);
+  const sorted = [...myMatches].sort((a, b) => (a.result ? 1 : 0) - (b.result ? 1 : 0));
+  const played = myMatches.filter(m => m.result).length;
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid var(--border);">
+      <button class="btn btn-sm btn-secondary" onclick="backToResultPlayerList()">← 목록</button>
+      <strong style="color:var(--gold);font-size:1rem;">${player.name}</strong>
+      <span style="color:var(--text-muted);font-size:0.85rem;">${played}/${myMatches.length} 완료</span>
+    </div>
+    ${sorted.map(m => {
+      const p1 = resultPlayers.find(p => p.id === m.player1Id);
+      const p2 = resultPlayers.find(p => p.id === m.player2Id);
+      const p1n = p1?.name || '?', p2n = p2?.name || '?';
+      let resultText = '미진행', resultStyle = 'color:var(--text-muted)';
+      if (m.result === 'player1') { resultText = `${p1n} 승`; resultStyle = 'color:#81c784'; }
+      else if (m.result === 'player2') { resultText = `${p2n} 승`; resultStyle = 'color:#81c784'; }
+      else if (m.result === 'draw') { resultText = '무승부'; resultStyle = 'color:#9e9e9e'; }
+      else if (m.result === 'noGame') { resultText = '미경기'; resultStyle = 'color:#9e9e9e'; }
+      return `<div class="match-item">
+        <div>
+          <div class="match-vs"><span class="player-name">${p1n}</span><span class="vs-badge">vs</span><span class="player-name">${p2n}</span></div>
+          <div style="font-size:0.82rem;margin-top:0.2rem;${resultStyle}">${resultText}</div>
+        </div>
+        <button class="btn btn-sm btn-secondary" onclick="openEditResult('${m.id}','${m.player1Id}','${m.player2Id}','${p1n}','${p2n}')">수정</button>
+      </div>`;
+    }).join('')}`;
+}
+
+function backToResultPlayerList() {
+  selectedResultPlayerId = null;
+  renderResultTab();
 }
 
 function openEditResult(matchId, p1Id, p2Id, p1Name, p2Name) {
@@ -778,6 +825,8 @@ window.confirmDeletePlayer = confirmDeletePlayer;
 window.openBonusModal = openBonusModal;
 window.saveBonusPoints = saveBonusPoints;
 window.onResultLeagueChange = onResultLeagueChange;
+window.selectResultPlayer = selectResultPlayer;
+window.backToResultPlayerList = backToResultPlayerList;
 window.openEditResult = openEditResult;
 window.adminSetResult = adminSetResult;
 window.loadEndedLeaguesForAdmin = loadEndedLeaguesForAdmin;

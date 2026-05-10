@@ -25,6 +25,7 @@ let bonusPlayerId = null;
 let editScheduleData = null;
 let editHandicapMemberId = null;
 let editPinMemberId = null;
+let renameMemberId = null;
 let editLeagueId = null;
 let resultPlayers = [];
 let resultMatches = [];
@@ -236,11 +237,35 @@ function renderMemberList() {
         ${m.handicap != null ? `<span style="color:var(--text-muted);font-size:0.85rem;margin-left:0.4rem;">핸디 ${m.handicap}</span>` : ''}
       </span>
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <button class="btn btn-sm btn-secondary" onclick="openRenameModal('${m.id}','${m.name}')">이름 변경</button>
         <button class="btn btn-sm btn-secondary" onclick="openHandicapModal('${m.id}','${m.name}',${m.handicap ?? 0})">핸디 변경</button>
         <button class="btn btn-sm btn-secondary" onclick="openChangePinModal('${m.id}','${m.name}')">비밀번호 변경</button>
         <button class="btn btn-sm btn-danger" onclick="openDeleteMember('${m.id}','${m.name}')">삭제</button>
       </div>
     </div>`).join('');
+}
+
+function openRenameModal(memberId, memberName) {
+  renameMemberId = memberId;
+  document.getElementById('renameMemberCurrent').textContent = memberName;
+  document.getElementById('renameMemberInput').value = memberName;
+  document.getElementById('renameAlert').innerHTML = '';
+  document.getElementById('renameModal').classList.add('active');
+}
+
+async function saveMemberName() {
+  if (!renameMemberId) return;
+  const newName = document.getElementById('renameMemberInput').value.trim();
+  if (!newName) { showAlert('renameAlert', '이름을 입력하세요.'); return; }
+  if (allMembers.some(m => m.name === newName && m.id !== renameMemberId)) {
+    showAlert('renameAlert', '이미 사용 중인 이름입니다.'); return;
+  }
+  try {
+    await updateDoc(doc(db, 'members', renameMemberId), { name: newName });
+    document.getElementById('renameModal').classList.remove('active');
+    renameMemberId = null;
+    await loadMembers();
+  } catch (e) { showAlert('renameAlert', '오류: ' + e.message); }
 }
 
 function openChangePinModal(memberId, memberName) {
@@ -813,6 +838,8 @@ window.createLeague = createLeague;
 window.endLeague = endLeague;
 window.addMember = addMember;
 window.openChangePinModal = openChangePinModal;
+window.openRenameModal = openRenameModal;
+window.saveMemberName = saveMemberName;
 window.saveChangedPin = saveChangedPin;
 window.openHandicapModal = openHandicapModal;
 window.saveHandicap = saveHandicap;

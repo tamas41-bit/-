@@ -44,7 +44,7 @@
     <div id="adminLoginAlert"></div>
     <div class="form-group">
       <label class="form-label">비밀번호</label>
-      <input type="password" class="form-control" id="adminPasswordInput" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')adminLogin()">
+      <input type="text" class="form-control input-masked" id="adminPasswordInput" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')adminLogin()">
     </div>
     <button class="btn btn-gold btn-full" id="adminLoginBtn" onclick="adminLogin()">로그인</button>
   </div>
@@ -206,15 +206,15 @@
         </div>
         <div class="form-group">
           <label class="form-label">현재 비밀번호</label>
-          <input type="password" class="form-control" id="currentPassword" placeholder="현재 비밀번호">
+          <input type="text" class="form-control input-masked" id="currentPassword" placeholder="현재 비밀번호">
         </div>
         <div class="form-group">
           <label class="form-label">새 비밀번호</label>
-          <input type="password" class="form-control" id="newPassword" placeholder="새 비밀번호">
+          <input type="text" class="form-control input-masked" id="newPassword" placeholder="새 비밀번호">
         </div>
         <div class="form-group">
           <label class="form-label">새 비밀번호 확인</label>
-          <input type="password" class="form-control" id="confirmPassword" placeholder="새 비밀번호 확인">
+          <input type="text" class="form-control input-masked" id="confirmPassword" placeholder="새 비밀번호 확인">
         </div>
         <div id="passwordAlert"></div>
         <button class="btn btn-primary" onclick="changePassword()">비밀번호 변경</button>
@@ -307,7 +307,7 @@
     </div>
     <div class="form-group">
       <label class="form-label">새 비밀번호 (숫자 4자리)</label>
-      <input type="password" class="form-control" id="newPinInput" maxlength="4" inputmode="numeric" placeholder="****">
+      <input type="text" class="form-control input-masked" id="newPinInput" maxlength="4" inputmode="numeric" placeholder="****">
     </div>
     <div id="changePinAlert"></div>
     <button class="btn btn-primary btn-full" onclick="saveChangedPin()">저장</button>

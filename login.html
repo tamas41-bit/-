@@ -31,7 +31,7 @@
     <div id="loginAlert"></div>
     <div class="form-group">
       <label class="form-label">비밀번호</label>
-      <input type="password" class="form-control" id="loginPin" maxlength="4" placeholder="4자리 숫자" inputmode="numeric" onkeydown="if(event.key==='Enter')doLogin()">
+      <input type="text" class="form-control input-masked" id="loginPin" maxlength="4" placeholder="4자리 숫자" inputmode="numeric" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
     <button class="btn btn-gold btn-full" onclick="doLogin()">로그인</button>
   </div>

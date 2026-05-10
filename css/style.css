@@ -1,3 +1,7 @@
+.input-masked {
+  -webkit-text-security: disc;
+}
+
 :root {
   --bg-dark: #111111;
   --bg-card: #1e1e1e;

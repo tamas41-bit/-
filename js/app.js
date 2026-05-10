@@ -198,7 +198,16 @@ function renderMatrix() {
     allPlayers.forEach(col => {
       if (row.id === col.id) { html += '<td class="matrix-self">-</td>'; return; }
       const m = getMatch(row.id, col.id);
-      if (!m || !m.result) { html += '<td class="matrix-pending">·</td>'; return; }
+      if (!m || !m.result) {
+        if (m && m.matchType === 'bo3' && m.seriesScore) {
+          const myS = m.player1Id === row.id ? m.seriesScore.player1 : m.seriesScore.player2;
+          const oppS = m.player1Id === row.id ? m.seriesScore.player2 : m.seriesScore.player1;
+          html += `<td class="matrix-pending" title="진행중">${myS}-${oppS}</td>`;
+        } else {
+          html += '<td class="matrix-pending">·</td>';
+        }
+        return;
+      }
       if (m.result === 'noGame' || m.result === 'draw') { html += '<td class="matrix-nogame">미</td>'; return; }
       const iWon = (m.result === 'player1' && m.player1Id === row.id) ||
                    (m.result === 'player2' && m.player2Id === row.id);
@@ -267,7 +276,13 @@ function renderEntryList() {
 
     const editBtn = `<button class="btn btn-sm btn-secondary" onclick="openResultModal('${m.id}','${oppId}','${oppName}')">수정</button>`;
     let statusHtml = '', actionHtml = '';
-    if (!m.result) {
+    if (!m.result && m.matchType === 'bo3' && m.seriesScore) {
+      const isP1 = m.player1Id === loggedInPlayer.id;
+      const myS = isP1 ? m.seriesScore.player1 : m.seriesScore.player2;
+      const oppS = isP1 ? m.seriesScore.player2 : m.seriesScore.player1;
+      statusHtml = `<span class="match-status status-pending">진행중 ${myS}-${oppS}</span>`;
+      actionHtml = `<button class="btn btn-sm btn-danger" onclick="openResultModal('${m.id}','${oppId}','${oppName}')">계속 입력</button>`;
+    } else if (!m.result) {
       statusHtml = '<span class="match-status status-pending">미진행</span>';
       actionHtml = `<button class="btn btn-sm btn-danger" onclick="openResultModal('${m.id}','${oppId}','${oppName}')">결과 입력</button>`;
     } else if (m.result === 'draw' || m.result === 'noGame') {
@@ -306,19 +321,32 @@ function openResultModal(matchId, oppId, oppName) {
   document.getElementById('modalMatchInfo').innerHTML =
     `<strong>${loggedInPlayer.name}</strong> vs <strong>${oppName}</strong>`;
   document.getElementById('modalAlert').innerHTML = '';
-  matchMode = 'single';
-  bo3Games = [];
-  setMatchMode('single');
+
+  const m = allMatches.find(x => x.id === matchId);
+  if (m && m.matchType === 'bo3' && m.bo3Games && m.bo3Games.length > 0 && !m.result) {
+    const isP1 = m.player1Id === loggedInPlayer.id;
+    bo3Games = m.bo3Games.map(g => {
+      if (g === 'player1') return isP1 ? 'me' : 'opp';
+      return isP1 ? 'opp' : 'me';
+    });
+    matchMode = 'bo3';
+    setMatchMode('bo3', true);
+  } else {
+    matchMode = 'single';
+    bo3Games = [];
+    setMatchMode('single');
+  }
+
   document.getElementById('resultModal').classList.add('active');
 }
 
-function setMatchMode(mode) {
+function setMatchMode(mode, keepGames = false) {
   matchMode = mode;
   document.getElementById('modeBtn-single').className = `btn btn-sm ${mode === 'single' ? 'btn-primary' : 'btn-secondary'}`;
   document.getElementById('modeBtn-bo3').className = `btn btn-sm ${mode === 'bo3' ? 'btn-primary' : 'btn-secondary'}`;
   document.getElementById('modeSingle').style.display = mode === 'single' ? 'flex' : 'none';
   document.getElementById('modeBo3').style.display = mode === 'bo3' ? 'block' : 'none';
-  if (mode === 'bo3') { bo3Games = []; renderBo3UI(); }
+  if (mode === 'bo3') { if (!keepGames) bo3Games = []; renderBo3UI(); }
 }
 
 function renderBo3UI() {
@@ -351,16 +379,41 @@ function renderBo3UI() {
   document.getElementById('bo3Games').innerHTML = html;
 }
 
-function addBo3Game(winner) {
+async function addBo3Game(winner) {
   bo3Games.push(winner);
   const myWins = bo3Games.filter(g => g === 'me').length;
   const oppWins = bo3Games.filter(g => g === 'opp').length;
-  if (myWins === 2) { submitBo3Result('win', myWins, oppWins); }
-  else if (oppWins === 2) { submitBo3Result('loss', myWins, oppWins); }
-  else { renderBo3UI(); }
+
+  if (!pendingMatchId || !loggedInPlayer) return;
+  const m = allMatches.find(x => x.id === pendingMatchId);
+  if (!m) return;
+
+  const isP1 = m.player1Id === loggedInPlayer.id;
+  const bo3GamesAbsolute = bo3Games.map(g =>
+    g === 'me' ? (isP1 ? 'player1' : 'player2') : (isP1 ? 'player2' : 'player1')
+  );
+  const seriesScore = {
+    player1: isP1 ? myWins : oppWins,
+    player2: isP1 ? oppWins : myWins
+  };
+
+  const isComplete = myWins === 2 || oppWins === 2;
+  if (isComplete) {
+    await submitBo3Result(myWins === 2 ? 'win' : 'loss', myWins, oppWins, bo3GamesAbsolute, seriesScore);
+  } else {
+    try {
+      await updateDoc(doc(db, 'leagues', activeLeague.id, 'matches', pendingMatchId), {
+        matchType: 'bo3', seriesScore, bo3Games: bo3GamesAbsolute,
+        reportedBy: loggedInPlayer.id, reportedAt: new Date()
+      });
+      renderBo3UI();
+    } catch (e) {
+      showAlert('modalAlert', '저장 오류: ' + e.message);
+    }
+  }
 }
 
-async function submitBo3Result(type, myWins, oppWins) {
+async function submitBo3Result(type, myWins, oppWins, bo3GamesAbsolute, seriesScore) {
   if (!pendingMatchId || !loggedInPlayer) return;
   const m = allMatches.find(x => x.id === pendingMatchId);
   if (!m) return;
@@ -374,15 +427,9 @@ async function submitBo3Result(type, myWins, oppWins) {
     winnerId = pendingOpponentId;
   }
 
-  const isP1 = m.player1Id === loggedInPlayer.id;
-  const seriesScore = {
-    player1: isP1 ? myWins : oppWins,
-    player2: isP1 ? oppWins : myWins
-  };
-
   try {
     await updateDoc(doc(db, 'leagues', activeLeague.id, 'matches', pendingMatchId), {
-      result, winnerId, matchType: 'bo3', seriesScore,
+      result, winnerId, matchType: 'bo3', seriesScore, bo3Games: bo3GamesAbsolute,
       reportedBy: loggedInPlayer.id, reportedAt: new Date()
     });
     document.getElementById('resultModal').classList.remove('active');

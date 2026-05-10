@@ -438,6 +438,26 @@ async function submitBo3Result(type, myWins, oppWins, bo3GamesAbsolute, seriesSc
   }
 }
 
+async function resetResult() {
+  if (!pendingMatchId || !loggedInPlayer) return;
+  const m = allMatches.find(x => x.id === pendingMatchId);
+  if (!m) return;
+
+  try {
+    await updateDoc(doc(db, 'leagues', activeLeague.id, 'matches', pendingMatchId), {
+      result: null, winnerId: null,
+      matchType: null, bo3Games: null, seriesScore: null,
+      reportedBy: null, reportedAt: null
+    });
+    bo3Games = [];
+    matchMode = 'single';
+    setMatchMode('single');
+    document.getElementById('resultModal').classList.remove('active');
+  } catch (e) {
+    showAlert('modalAlert', '초기화 오류: ' + e.message);
+  }
+}
+
 async function submitResult(type) {
   if (!pendingMatchId || !loggedInPlayer) return;
   const m = allMatches.find(x => x.id === pendingMatchId);
@@ -471,6 +491,7 @@ window.openResultModal = openResultModal;
 window.setMatchMode = setMatchMode;
 window.addBo3Game = addBo3Game;
 window.submitResult = submitResult;
+window.resetResult = resetResult;
 window.renderMatrix = renderMatrix;
 
 init();

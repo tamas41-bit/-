@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>이전 리그 결과 - 한큐빌리어드 리그</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a class="navbar-brand" href="index.html">🎱 한큐빌리어드</a>
+    <button class="nav-toggle" onclick="document.getElementById('navLinks').classList.toggle('open')">☰</button>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html" class="nav-link">순위표</a>
+      <a href="schedule.html" class="nav-link">경기 일정</a>
+      <a href="history.html" class="nav-link active">이전 리그 결과</a>
+      <a href="admin.html" class="nav-link">관리자</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📋 이전 리그 결과</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">리그 선택</label>
+      <select class="form-control" id="leagueSelect" onchange="onLeagueSelect()">
+        <option value="">불러오는 중...</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="historyContent"></div>
+
+</div>
+
+<script type="module" src="js/history.js"></script>
+</body>
+</html>

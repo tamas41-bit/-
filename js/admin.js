@@ -23,6 +23,8 @@ let playerToDelete = null;
 let memberToDelete = null;
 let bonusPlayerId = null;
 let editScheduleData = null;
+let editHandicapMemberId = null;
+let editPinMemberId = null;
 
 async function init() {
   const cfg = await getDoc(doc(db, 'config', 'settings'));
@@ -197,27 +199,68 @@ function renderMemberList() {
         <strong>${m.name}</strong>
         ${m.handicap != null ? `<span style="color:var(--text-muted);font-size:0.85rem;margin-left:0.4rem;">핸디 ${m.handicap}</span>` : ''}
       </span>
-      <div style="display:flex;gap:0.5rem;">
-        <button class="btn btn-sm btn-secondary" onclick="promptResetMemberPin('${m.id}','${m.name}')">PIN 변경</button>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <button class="btn btn-sm btn-secondary" onclick="openHandicapModal('${m.id}','${m.name}',${m.handicap ?? 0})">핸디 변경</button>
+        <button class="btn btn-sm btn-secondary" onclick="openChangePinModal('${m.id}','${m.name}')">비밀번호 변경</button>
         <button class="btn btn-sm btn-danger" onclick="openDeleteMember('${m.id}','${m.name}')">삭제</button>
       </div>
     </div>`).join('');
 }
 
-async function promptResetMemberPin(memberId, memberName) {
-  const newPin = prompt(`${memberName}의 새 PIN (숫자 4자리):`);
-  if (!newPin) return;
-  if (!/^\d{4}$/.test(newPin)) { alert('PIN은 숫자 4자리입니다.'); return; }
+function openChangePinModal(memberId, memberName) {
+  editPinMemberId = memberId;
+  document.getElementById('changePinMemberName').textContent = memberName;
+  document.getElementById('newPinInput').value = '';
+  document.getElementById('changePinAlert').innerHTML = '';
+  document.getElementById('changePinModal').classList.add('active');
+}
+
+async function saveChangedPin() {
+  if (!editPinMemberId) return;
+  const newPin = document.getElementById('newPinInput').value.trim();
+  if (!/^\d{4}$/.test(newPin)) { showAlert('changePinAlert', 'PIN은 숫자 4자리입니다.'); return; }
   const pinHash = await hashString(newPin);
-  const batch = writeBatch(db);
-  batch.update(doc(db, 'members', memberId), { pinHash });
-  if (currentLeague) {
-    const player = allPlayers.find(p => p.memberId === memberId);
-    if (player) batch.update(doc(db, 'leagues', currentLeague.id, 'players', player.id), { pinHash });
-  }
-  await batch.commit();
-  showAlert('memberAlert', `${memberName} PIN이 변경되었습니다.`, 'success');
-  await loadMembers();
+  try {
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'members', editPinMemberId), { pinHash });
+    for (const league of allActiveLeagues) {
+      const player = (league.id === currentLeague?.id ? allPlayers : []).find(p => p.memberId === editPinMemberId);
+      if (player) batch.update(doc(db, 'leagues', league.id, 'players', player.id), { pinHash });
+    }
+    await batch.commit();
+    document.getElementById('changePinModal').classList.remove('active');
+    editPinMemberId = null;
+    showAlert('memberAlert', '비밀번호가 변경되었습니다.', 'success');
+    await loadMembers();
+  } catch (e) { showAlert('changePinAlert', '오류: ' + e.message); }
+}
+
+function openHandicapModal(memberId, memberName, currentHandicap) {
+  editHandicapMemberId = memberId;
+  document.getElementById('handicapMemberName').textContent = memberName;
+  document.getElementById('handicapInput').value = currentHandicap;
+  document.getElementById('handicapAlert').innerHTML = '';
+  document.getElementById('handicapModal').classList.add('active');
+}
+
+async function saveHandicap() {
+  if (!editHandicapMemberId) return;
+  const raw = document.getElementById('handicapInput').value;
+  const val = parseInt(raw);
+  if (raw === '' || isNaN(val)) { showAlert('handicapAlert', '숫자를 입력하세요.'); return; }
+  try {
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'members', editHandicapMemberId), { handicap: val });
+    const player = allPlayers.find(p => p.memberId === editHandicapMemberId);
+    if (player && currentLeague) {
+      batch.update(doc(db, 'leagues', currentLeague.id, 'players', player.id), { handicap: val });
+    }
+    await batch.commit();
+    document.getElementById('handicapModal').classList.remove('active');
+    editHandicapMemberId = null;
+    showAlert('memberAlert', '핸디캡이 변경되었습니다.', 'success');
+    await loadMembers();
+  } catch (e) { showAlert('handicapAlert', '오류: ' + e.message); }
 }
 
 function openDeleteMember(memberId, memberName) {
@@ -687,7 +730,10 @@ window.adminLogout = adminLogout;
 window.createLeague = createLeague;
 window.endLeague = endLeague;
 window.addMember = addMember;
-window.promptResetMemberPin = promptResetMemberPin;
+window.openChangePinModal = openChangePinModal;
+window.saveChangedPin = saveChangedPin;
+window.openHandicapModal = openHandicapModal;
+window.saveHandicap = saveHandicap;
 window.openDeleteMember = openDeleteMember;
 window.confirmDeleteMember = confirmDeleteMember;
 window.onPlayerLeagueChange = onPlayerLeagueChange;

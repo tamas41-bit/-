@@ -49,10 +49,12 @@ async function loadScheduleList() {
   if (!activeLeague) { el.innerHTML = '<div class="alert alert-info">진행 중인 리그가 없습니다.</div>'; return; }
 
   try {
+    const now = new Date();
     const snap = await getDocs(query(
       collection(db, 'schedules'),
       where('leagueId', '==', activeLeague.id),
       where('status', '==', 'open'),
+      where('datetime', '>=', now),
       orderBy('datetime', 'asc')
     ));
 
@@ -115,11 +117,13 @@ async function postSchedule() {
 async function loadMySchedules() {
   if (!scheduleLoggedIn || !activeLeague) return;
   const el = document.getElementById('myScheduleList');
+  const now = new Date();
   const snap = await getDocs(query(
     collection(db, 'schedules'),
     where('leagueId', '==', activeLeague.id),
     where('playerId', '==', scheduleLoggedIn.id),
-    orderBy('datetime', 'desc')
+    where('datetime', '>=', now),
+    orderBy('datetime', 'asc')
   ));
 
   if (snap.empty) { el.innerHTML = '<div class="empty-state" style="padding:1rem;">등록된 일정이 없습니다</div>'; return; }

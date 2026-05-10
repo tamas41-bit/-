@@ -25,6 +25,7 @@ let bonusPlayerId = null;
 let editScheduleData = null;
 let editHandicapMemberId = null;
 let editPinMemberId = null;
+let editLeagueId = null;
 
 async function init() {
   const cfg = await getDoc(doc(db, 'config', 'settings'));
@@ -98,7 +99,10 @@ function renderLeagueList() {
     return `<div class="player-row" style="flex-direction:column;align-items:flex-start;gap:0.4rem;padding:0.85rem 0;">
       <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
         <strong style="color:var(--gold);font-size:1rem;">${league.name}</strong>
-        <button class="btn btn-sm btn-danger" onclick="endLeague('${league.id}','${league.name}')">종료</button>
+        <div style="display:flex;gap:0.5rem;">
+          <button class="btn btn-sm btn-secondary" onclick="openEditLeagueModal('${league.id}')">수정</button>
+          <button class="btn btn-sm btn-danger" onclick="endLeague('${league.id}','${league.name}')">종료</button>
+        </div>
       </div>
       <div style="color:var(--text-secondary);font-size:0.83rem;">승 ${s.win}점 · 패 ${s.loss}점 · 미경기 ${s.noGame}점</div>
     </div>`;
@@ -150,6 +154,34 @@ async function endLeague(leagueId, leagueName) {
     renderResultTab([], []);
   }
   await loadLeagues();
+}
+
+function openEditLeagueModal(leagueId) {
+  const league = allActiveLeagues.find(l => l.id === leagueId);
+  if (!league) return;
+  editLeagueId = leagueId;
+  document.getElementById('editLeagueName').value = league.name;
+  document.getElementById('editLeagueWin').value = league.scoring.win;
+  document.getElementById('editLeagueLoss').value = league.scoring.loss;
+  document.getElementById('editLeagueNoGame').value = league.scoring.noGame;
+  document.getElementById('editLeagueAlert').innerHTML = '';
+  document.getElementById('editLeagueModal').classList.add('active');
+}
+
+async function saveEditLeague() {
+  if (!editLeagueId) return;
+  const name = document.getElementById('editLeagueName').value.trim();
+  const win = parseInt(document.getElementById('editLeagueWin').value) || 0;
+  const loss = parseInt(document.getElementById('editLeagueLoss').value) || 0;
+  const noGame = parseInt(document.getElementById('editLeagueNoGame').value) || 0;
+  if (!name) { showAlert('editLeagueAlert', '리그 이름을 입력하세요.'); return; }
+
+  try {
+    await updateDoc(doc(db, 'leagues', editLeagueId), { name, scoring: { win, loss, noGame } });
+    document.getElementById('editLeagueModal').classList.remove('active');
+    editLeagueId = null;
+    await loadLeagues();
+  } catch (e) { showAlert('editLeagueAlert', '오류: ' + e.message); }
 }
 
 // ── 회원 관리 ──────────────────────────────────────────────────────
@@ -725,6 +757,8 @@ async function changePassword() {
   ['currentPassword', 'newPassword', 'confirmPassword'].forEach(id => document.getElementById(id).value = '');
 }
 
+window.openEditLeagueModal = openEditLeagueModal;
+window.saveEditLeague = saveEditLeague;
 window.adminLogin = adminLogin;
 window.adminLogout = adminLogout;
 window.createLeague = createLeague;

@@ -224,6 +224,34 @@
   </div>
 </div>
 
+<!-- 리그 수정 모달 -->
+<div class="modal-overlay" id="editLeagueModal">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('editLeagueModal').classList.remove('active')">✕</button>
+    <div class="modal-title">리그 수정</div>
+    <div class="form-group">
+      <label class="form-label">리그 이름</label>
+      <input type="text" class="form-control" id="editLeagueName" placeholder="리그 이름">
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">승 승점</label>
+        <input type="number" class="form-control" id="editLeagueWin" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">패 승점</label>
+        <input type="number" class="form-control" id="editLeagueLoss" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">미경기 승점</label>
+        <input type="number" class="form-control" id="editLeagueNoGame" min="0">
+      </div>
+    </div>
+    <div id="editLeagueAlert"></div>
+    <button class="btn btn-primary btn-full" onclick="saveEditLeague()">저장</button>
+  </div>
+</div>
+
 <!-- 결과 수정 모달 -->
 <div class="modal-overlay" id="editResultModal">
   <div class="modal">

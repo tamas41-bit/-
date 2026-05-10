@@ -57,7 +57,7 @@ async function loadAll() {
 // ── 리그 관리 ──────────────────────────────────────────────────────
 
 async function loadLeague() {
-  const snap = await getDocs(query(collection(db, 'leagues'), where('active', '==', true), limit(1)));
+  const snap = await getDocs(query(collection(db, 'leagues'), where('active', '==', true), orderBy('createdAt', 'desc'), limit(1)));
   const info = document.getElementById('currentLeagueInfo');
   const badge = document.getElementById('currentLeagueBadge');
 
@@ -85,14 +85,10 @@ async function createLeague() {
   const loss = parseInt(document.getElementById('scoreLoss').value) || 0;
   const noGame = parseInt(document.getElementById('scoreNoGame').value) || 0;
   if (!name) { showAlert('createLeagueAlert', '리그 이름을 입력하세요.'); return; }
-  if (currentLeague && !confirm(`"${currentLeague.name}" 리그를 종료하고 새 리그를 시작하시겠습니까?`)) return;
 
   try {
-    const batch = writeBatch(db);
-    if (currentLeague) batch.update(doc(db, 'leagues', currentLeague.id), { active: false });
     const newRef = doc(collection(db, 'leagues'));
-    batch.set(newRef, { name, active: true, scoring: { win, loss, noGame }, createdAt: serverTimestamp() });
-    await batch.commit();
+    await setDoc(newRef, { name, active: true, scoring: { win, loss, noGame }, createdAt: serverTimestamp() });
 
     currentLeague = { id: newRef.id, name, active: true, scoring: { win, loss, noGame } };
     allPlayers = []; allMatches = [];

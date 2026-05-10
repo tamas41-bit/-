@@ -1,6 +1,6 @@
 import { db } from './firebase-config.js';
 import {
-  collection, doc, getDocs, query, where, onSnapshot, updateDoc, limit
+  collection, doc, getDocs, query, where, onSnapshot, updateDoc, orderBy, limit
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { hashString, showAlert, calculateStandings } from './utils.js';
 
@@ -14,7 +14,7 @@ let pendingOpponentName = null;
 
 async function init() {
   try {
-    const snap = await getDocs(query(collection(db, 'leagues'), where('active', '==', true), limit(1)));
+    const snap = await getDocs(query(collection(db, 'leagues'), where('active', '==', true), orderBy('createdAt', 'desc'), limit(1)));
     if (snap.empty) {
       document.getElementById('leagueBanner').innerHTML = '<div class="alert alert-info">진행 중인 리그가 없습니다. 관리자에게 문의하세요.</div>';
       document.getElementById('standingsBody').innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="icon">🎱</div>진행 중인 리그가 없습니다</div></td></tr>`;

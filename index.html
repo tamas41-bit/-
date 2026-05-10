@@ -13,7 +13,7 @@
     <a class="navbar-brand" href="index.html">한큐빌리어드</a><span id="navBrandUser" style="display:none;color:var(--gold);font-weight:bold;font-size:0.82rem;margin-left:0.5rem;">[ <span id="navBrandUserName"></span> 님 ]</span>
     <button class="nav-toggle" onclick="document.getElementById('navLinks').classList.toggle('open')">☰</button>
     <div class="nav-links" id="navLinks">
-      <a href="index.html" class="nav-link active">순위표</a>
+      <a href="index.html" class="nav-link active">리그전 현황</a>
       <a href="schedule.html" class="nav-link">경기 가능 일정</a>
       <a href="history.html" class="nav-link">이전 리그 결과</a>
       <a href="members.html" class="nav-link">회원 목록</a>
@@ -62,6 +62,9 @@
           </tbody>
         </table>
       </div>
+      <div style="margin-top:0.75rem;font-size:0.78rem;color:var(--text-muted);text-align:center;">
+        회원 이름을 클릭하시면 미진행된 경기를 확인하실 수 있습니다.
+      </div>
     </div>
   </div>
 
@@ -104,6 +107,15 @@
     </div>
   </div>
 
+</div>
+
+<!-- 미진행 경기 모달 -->
+<div class="modal-overlay" id="pendingModal">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('pendingModal').classList.remove('active')">✕</button>
+    <div class="modal-title" id="pendingModalTitle"></div>
+    <div id="pendingModalContent"></div>
+  </div>
 </div>
 
 <!-- 결과 입력 모달 -->

@@ -167,7 +167,7 @@ function renderStandings() {
     const pct = p.total > 0 ? Math.round(p.played / p.total * 100) : 0;
     return `<tr>
       <td><span class="rank-badge ${cls}">${r}</span></td>
-      <td><strong>${p.name}</strong></td>
+      <td><strong style="cursor:pointer;text-decoration:underline dotted;" onclick="showPendingMatches('${p.id}')">${p.name}</strong></td>
       <td class="wins">${p.wins}</td>
       <td class="losses">${p.losses}</td>
       <td class="points">${p.points}</td>
@@ -483,6 +483,36 @@ async function submitResult(type) {
   }
 }
 
+function showPendingMatches(playerId) {
+  const player = allPlayers.find(p => p.id === playerId);
+  if (!player) return;
+  const pending = allMatches.filter(m =>
+    (m.player1Id === playerId || m.player2Id === playerId) && !m.result
+  );
+  document.getElementById('pendingModalTitle').textContent = `${player.name} 님의 미진행 경기`;
+  if (!pending.length) {
+    document.getElementById('pendingModalContent').innerHTML =
+      '<div style="color:var(--text-muted);text-align:center;padding:1rem;">미진행 경기가 없습니다.</div>';
+  } else {
+    document.getElementById('pendingModalContent').innerHTML = pending.map(m => {
+      const oppId = m.player1Id === playerId ? m.player2Id : m.player1Id;
+      const opp = allPlayers.find(p => p.id === oppId);
+      const oppName = opp ? opp.name : '?';
+      let extra = '';
+      if (m.matchType === 'bo3' && m.seriesScore) {
+        const myS = m.player1Id === playerId ? m.seriesScore.player1 : m.seriesScore.player2;
+        const oppS = m.player1Id === playerId ? m.seriesScore.player2 : m.seriesScore.player1;
+        extra = `<span style="font-size:0.82rem;color:var(--text-muted);margin-left:0.5rem;">진행중 ${myS}-${oppS}</span>`;
+      }
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:0.55rem 0;border-bottom:1px solid var(--border);">
+        <span><strong>${player.name}</strong> vs <strong>${oppName}</strong>${extra}</span>
+        <span class="match-status status-pending">미진행</span>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('pendingModal').classList.add('active');
+}
+
 window.onLeagueSelectorChange = onLeagueSelectorChange;
 window.loginForEntry = loginForEntry;
 window.logoutEntry = logoutEntry;
@@ -492,5 +522,6 @@ window.addBo3Game = addBo3Game;
 window.submitResult = submitResult;
 window.resetResult = resetResult;
 window.renderMatrix = renderMatrix;
+window.showPendingMatches = showPendingMatches;
 
 init();

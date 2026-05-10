@@ -5,7 +5,7 @@ import {
 
 async function init() {
   try {
-    const snap = await getDocs(query(collection(db, 'members'), orderBy('name')));
+    const snap = await getDocs(query(collection(db, 'members'), orderBy('handicap', 'desc')));
     const members = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     document.getElementById('memberCount').textContent = `총 ${members.length}명`;
 

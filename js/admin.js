@@ -145,7 +145,7 @@ async function endLeague(leagueId, leagueName) {
 
 async function loadMembers() {
   try {
-    const snap = await getDocs(query(collection(db, 'members'), orderBy('name')));
+    const snap = await getDocs(query(collection(db, 'members'), orderBy('handicap', 'desc')));
     allMembers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     document.getElementById('memberCount').textContent = `총 ${allMembers.length}명`;
     renderMemberList();

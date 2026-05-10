@@ -6,13 +6,23 @@ import {
 import { hashString, showAlert, generateMatchPairs } from './utils.js';
 
 let allActiveLeagues = [];
-let currentLeague = null;   // 선수 관리 탭에서 선택된 리그
-let resultLeague = null;    // 결과 수정 탭에서 선택된 리그
+let allEndedLeagues = [];
+let currentLeague = null;
+let resultLeague = null;
+let historyLeague = null;
+let currentEditLeagueId = null;
+
 let allPlayers = [];
 let allMatches = [];
 let allMembers = [];
+let historyPlayers = [];
+let historyMatches = [];
+let allSchedules = [];
+
 let playerToDelete = null;
 let memberToDelete = null;
+let bonusPlayerId = null;
+let editScheduleData = null;
 
 async function init() {
   const cfg = await getDoc(doc(db, 'config', 'settings'));
@@ -106,7 +116,6 @@ function renderLeagueSelectors() {
   playerSel.innerHTML = '<option value="">-- 리그를 선택하세요 --</option>' + options;
   resultSel.innerHTML = '<option value="">-- 리그를 선택하세요 --</option>' + options;
 
-  // 기존 선택값 유지
   if (prevPlayer && allActiveLeagues.find(l => l.id === prevPlayer)) playerSel.value = prevPlayer;
   if (prevResult && allActiveLeagues.find(l => l.id === prevResult)) resultSel.value = prevResult;
 }
@@ -136,7 +145,7 @@ async function endLeague(leagueId, leagueName) {
   }
   if (resultLeague?.id === leagueId) {
     resultLeague = null;
-    renderResultTab();
+    renderResultTab([], []);
   }
   await loadLeagues();
 }
@@ -262,14 +271,23 @@ function renderPlayerList() {
     el.innerHTML = '<div class="empty-state" style="padding:1rem;">등록된 선수가 없습니다</div>';
     return;
   }
-  el.innerHTML = allPlayers.map(p => `
-    <div class="player-row">
+  el.innerHTML = allPlayers.map(p => {
+    const bonus = p.bonusPoints || 0;
+    const bonusLabel = bonus !== 0
+      ? `<span style="color:var(--gold);font-size:0.82rem;margin-left:0.4rem;">조정 ${bonus > 0 ? '+' : ''}${bonus}점</span>`
+      : '';
+    return `<div class="player-row">
       <span>
         <strong>${p.name}</strong>
         ${p.handicap != null ? `<span style="color:var(--text-muted);font-size:0.85rem;margin-left:0.4rem;">핸디 ${p.handicap}</span>` : ''}
+        ${bonusLabel}
       </span>
-      <button class="btn btn-sm btn-danger" onclick="openDeletePlayer('${p.id}','${p.name}')">삭제</button>
-    </div>`).join('');
+      <div style="display:flex;gap:0.5rem;">
+        <button class="btn btn-sm btn-secondary" onclick="openBonusModal('${p.id}','${p.name}',${bonus})">승점 조정</button>
+        <button class="btn btn-sm btn-danger" onclick="openDeletePlayer('${p.id}','${p.name}')">삭제</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function renderMemberSelectForLeague() {
@@ -355,7 +373,32 @@ async function confirmDeletePlayer() {
   await loadPlayers();
 }
 
-// ── 결과 수정 ──────────────────────────────────────────────────────
+// ── 승점 조정 ──────────────────────────────────────────────────────
+
+function openBonusModal(playerId, playerName, currentBonus) {
+  bonusPlayerId = playerId;
+  document.getElementById('bonusPlayerName').textContent = playerName;
+  document.getElementById('currentBonusDisplay').textContent = currentBonus > 0 ? `+${currentBonus}` : currentBonus;
+  document.getElementById('bonusInput').value = currentBonus;
+  document.getElementById('bonusAlert').innerHTML = '';
+  document.getElementById('bonusModal').classList.add('active');
+}
+
+async function saveBonusPoints() {
+  if (!bonusPlayerId || !currentLeague) return;
+  const raw = document.getElementById('bonusInput').value;
+  const val = parseInt(raw);
+  if (raw === '' || isNaN(val)) { showAlert('bonusAlert', '숫자를 입력하세요.'); return; }
+
+  try {
+    await updateDoc(doc(db, 'leagues', currentLeague.id, 'players', bonusPlayerId), { bonusPoints: val });
+    document.getElementById('bonusModal').classList.remove('active');
+    bonusPlayerId = null;
+    await loadPlayers();
+  } catch (e) { showAlert('bonusAlert', '오류: ' + e.message); }
+}
+
+// ── 결과 수정 (진행 중 리그) ──────────────────────────────────────
 
 async function onResultLeagueChange() {
   const leagueId = document.getElementById('resultLeagueSelect').value;
@@ -388,6 +431,7 @@ function renderResultTab(players = [], matches = []) {
     let resultText = '미진행', resultStyle = 'color:var(--text-muted)';
     if (m.result === 'player1') { resultText = `${p1n} 승`; resultStyle = 'color:#81c784'; }
     else if (m.result === 'player2') { resultText = `${p2n} 승`; resultStyle = 'color:#81c784'; }
+    else if (m.result === 'draw') { resultText = '무승부'; resultStyle = 'color:#9e9e9e'; }
     else if (m.result === 'noGame') { resultText = '미경기'; resultStyle = 'color:#9e9e9e'; }
     return `<div class="match-item">
       <div>
@@ -400,6 +444,7 @@ function renderResultTab(players = [], matches = []) {
 }
 
 function openEditResult(matchId, p1Id, p2Id, p1Name, p2Name) {
+  currentEditLeagueId = resultLeague?.id;
   document.getElementById('editMatchId').value = matchId;
   document.getElementById('editPlayer1Id').value = p1Id;
   document.getElementById('editPlayer2Id').value = p2Id;
@@ -411,17 +456,214 @@ function openEditResult(matchId, p1Id, p2Id, p1Name, p2Name) {
 }
 
 async function adminSetResult(result) {
-  if (!resultLeague) return;
+  if (!currentEditLeagueId) return;
   const matchId = document.getElementById('editMatchId').value;
   const p1Id = document.getElementById('editPlayer1Id').value;
   const p2Id = document.getElementById('editPlayer2Id').value;
   const winnerId = result === 'player1' ? p1Id : result === 'player2' ? p2Id : null;
   try {
-    await updateDoc(doc(db, 'leagues', resultLeague.id, 'matches', matchId),
+    await updateDoc(doc(db, 'leagues', currentEditLeagueId, 'matches', matchId),
       { result, winnerId, reportedBy: 'admin', reportedAt: new Date() });
     document.getElementById('editResultModal').classList.remove('active');
-    await loadResultData();
+    if (resultLeague?.id === currentEditLeagueId) await loadResultData();
+    if (historyLeague?.id === currentEditLeagueId) await loadHistoryData();
   } catch (e) { showAlert('editModalAlert', '오류: ' + e.message); }
+}
+
+// ── 이전 리그 관리 ──────────────────────────────────────────────────
+
+async function loadEndedLeaguesForAdmin() {
+  const sel = document.getElementById('historyLeagueSelect');
+  try {
+    const snap = await getDocs(query(
+      collection(db, 'leagues'),
+      where('active', '==', false),
+      orderBy('createdAt', 'desc')
+    ));
+    allEndedLeagues = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    sel.innerHTML = '<option value="">-- 리그를 선택하세요 --</option>';
+    allEndedLeagues.forEach(l => {
+      const opt = document.createElement('option');
+      opt.value = l.id; opt.textContent = l.name;
+      sel.appendChild(opt);
+    });
+    if (historyLeague) {
+      sel.value = historyLeague.id;
+    }
+  } catch (e) {
+    document.getElementById('historyMatchList').innerHTML =
+      `<div class="alert alert-error">불러오기 실패: ${e.message}</div>`;
+  }
+}
+
+async function onHistoryLeagueChange() {
+  const id = document.getElementById('historyLeagueSelect').value;
+  historyLeague = allEndedLeagues.find(l => l.id === id) || null;
+  historyPlayers = []; historyMatches = [];
+  document.getElementById('historyMatchList').innerHTML = '';
+  document.getElementById('historyLeagueActions').style.display = historyLeague ? 'block' : 'none';
+  if (!historyLeague) return;
+  await loadHistoryData();
+}
+
+async function loadHistoryData() {
+  if (!historyLeague) return;
+  const [ps, ms] = await Promise.all([
+    getDocs(collection(db, 'leagues', historyLeague.id, 'players')),
+    getDocs(collection(db, 'leagues', historyLeague.id, 'matches'))
+  ]);
+  historyPlayers = ps.docs.map(d => ({ id: d.id, ...d.data() }));
+  historyMatches = ms.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderHistoryMatchList();
+}
+
+function renderHistoryMatchList() {
+  const el = document.getElementById('historyMatchList');
+  if (!historyMatches.length) { el.innerHTML = '<div class="empty-state">경기가 없습니다</div>'; return; }
+
+  const sorted = [...historyMatches].sort((a, b) => (a.result ? 1 : 0) - (b.result ? 1 : 0));
+  el.innerHTML = sorted.map(m => {
+    const p1 = historyPlayers.find(p => p.id === m.player1Id);
+    const p2 = historyPlayers.find(p => p.id === m.player2Id);
+    const p1n = p1?.name || '?', p2n = p2?.name || '?';
+    let resultText = '미진행', resultStyle = 'color:var(--text-muted)';
+    if (m.result === 'player1') { resultText = `${p1n} 승`; resultStyle = 'color:#81c784'; }
+    else if (m.result === 'player2') { resultText = `${p2n} 승`; resultStyle = 'color:#81c784'; }
+    else if (m.result === 'draw') { resultText = '무승부'; resultStyle = 'color:#9e9e9e'; }
+    else if (m.result === 'noGame') { resultText = '미경기'; resultStyle = 'color:#9e9e9e'; }
+    return `<div class="match-item">
+      <div>
+        <div class="match-vs"><span class="player-name">${p1n}</span><span class="vs-badge">vs</span><span class="player-name">${p2n}</span></div>
+        <div style="font-size:0.82rem;margin-top:0.2rem;${resultStyle}">${resultText}</div>
+      </div>
+      <button class="btn btn-sm btn-secondary" onclick="openHistoryEditResult('${m.id}','${m.player1Id}','${m.player2Id}','${p1n}','${p2n}')">수정</button>
+    </div>`;
+  }).join('');
+}
+
+function openHistoryEditResult(matchId, p1Id, p2Id, p1Name, p2Name) {
+  currentEditLeagueId = historyLeague?.id;
+  document.getElementById('editMatchId').value = matchId;
+  document.getElementById('editPlayer1Id').value = p1Id;
+  document.getElementById('editPlayer2Id').value = p2Id;
+  document.getElementById('editModalInfo').textContent = `${p1Name} vs ${p2Name}`;
+  document.getElementById('editBtnP1Win').textContent = `${p1Name} 승리`;
+  document.getElementById('editBtnP2Win').textContent = `${p2Name} 승리`;
+  document.getElementById('editModalAlert').innerHTML = '';
+  document.getElementById('editResultModal').classList.add('active');
+}
+
+async function deleteEndedLeague() {
+  if (!historyLeague) return;
+  if (!confirm(`"${historyLeague.name}" 리그를 완전히 삭제하시겠습니까?\n선수, 경기 기록이 모두 삭제됩니다.`)) return;
+
+  try {
+    const batch = writeBatch(db);
+    historyPlayers.forEach(p => batch.delete(doc(db, 'leagues', historyLeague.id, 'players', p.id)));
+    historyMatches.forEach(m => batch.delete(doc(db, 'leagues', historyLeague.id, 'matches', m.id)));
+    batch.delete(doc(db, 'leagues', historyLeague.id));
+    await batch.commit();
+
+    allEndedLeagues = allEndedLeagues.filter(l => l.id !== historyLeague.id);
+    const deletedId = historyLeague.id;
+    historyLeague = null; historyPlayers = []; historyMatches = [];
+    document.getElementById('historyMatchList').innerHTML = '';
+    document.getElementById('historyLeagueActions').style.display = 'none';
+
+    const sel = document.getElementById('historyLeagueSelect');
+    sel.innerHTML = '<option value="">-- 리그를 선택하세요 --</option>';
+    allEndedLeagues.forEach(l => {
+      const opt = document.createElement('option');
+      opt.value = l.id; opt.textContent = l.name;
+      sel.appendChild(opt);
+    });
+    showAlert('historyAlert', '리그가 삭제되었습니다.', 'success');
+  } catch (e) { showAlert('historyAlert', '삭제 오류: ' + e.message); }
+}
+
+// ── 일정 관리 ──────────────────────────────────────────────────────
+
+async function loadAdminSchedules() {
+  const el = document.getElementById('adminScheduleList');
+  el.innerHTML = '<div class="loading"><span class="spinner"></span></div>';
+
+  try {
+    const snap = await getDocs(collection(db, 'schedules'));
+    allSchedules = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => new Date(`${b.date}T${b.time}`) - new Date(`${a.date}T${a.time}`));
+    document.getElementById('scheduleCount').textContent = `총 ${allSchedules.length}건`;
+    renderAdminScheduleList();
+  } catch (e) {
+    el.innerHTML = `<div class="alert alert-error">불러오기 실패: ${e.message}</div>`;
+  }
+}
+
+function renderAdminScheduleList() {
+  const el = document.getElementById('adminScheduleList');
+  if (!allSchedules.length) {
+    el.innerHTML = '<div class="empty-state">등록된 일정이 없습니다</div>';
+    return;
+  }
+
+  const days = ['일', '월', '화', '수', '목', '금', '토'];
+  el.innerHTML = allSchedules.map(s => {
+    const d = new Date(`${s.date}T${s.time}`);
+    const dt = `${d.getMonth() + 1}월 ${d.getDate()}일 (${days[d.getDay()]}) ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+    const isPast = d < new Date();
+    let statusBadge;
+    if (s.status === 'cancelled') statusBadge = '<span class="badge badge-inactive">취소</span>';
+    else if (isPast) statusBadge = '<span class="badge" style="background:var(--text-muted);">종료</span>';
+    else statusBadge = '<span class="badge badge-active">모집중</span>';
+
+    return `<div class="match-item">
+      <div>
+        <div style="font-weight:600;margin-bottom:0.2rem;">${dt}</div>
+        <div style="font-size:0.85rem;color:var(--text-secondary);">👤 ${s.playerName}${s.note ? ` · ${s.note}` : ''}</div>
+        <div style="margin-top:0.3rem;">${statusBadge}</div>
+      </div>
+      <div style="display:flex;gap:0.5rem;flex-shrink:0;">
+        <button class="btn btn-sm btn-secondary" onclick="openScheduleEdit('${s.id}')">수정</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteAdminSchedule('${s.id}','${s.playerName}')">삭제</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openScheduleEdit(scheduleId) {
+  editScheduleData = allSchedules.find(s => s.id === scheduleId);
+  if (!editScheduleData) return;
+  document.getElementById('editScheduleId').value = scheduleId;
+  document.getElementById('editScheduleDate').value = editScheduleData.date;
+  document.getElementById('editScheduleTime').value = editScheduleData.time;
+  document.getElementById('editScheduleNote').value = editScheduleData.note || '';
+  document.getElementById('editScheduleStatus').value = editScheduleData.status || 'open';
+  document.getElementById('scheduleEditAlert').innerHTML = '';
+  document.getElementById('scheduleEditModal').classList.add('active');
+}
+
+async function saveScheduleEdit() {
+  const id = document.getElementById('editScheduleId').value;
+  const date = document.getElementById('editScheduleDate').value;
+  const time = document.getElementById('editScheduleTime').value;
+  const note = document.getElementById('editScheduleNote').value.trim();
+  const status = document.getElementById('editScheduleStatus').value;
+  if (!date || !time) { showAlert('scheduleEditAlert', '날짜와 시간을 입력하세요.'); return; }
+
+  try {
+    await updateDoc(doc(db, 'schedules', id), {
+      date, time, datetime: new Date(`${date}T${time}`), note, status
+    });
+    document.getElementById('scheduleEditModal').classList.remove('active');
+    await loadAdminSchedules();
+  } catch (e) { showAlert('scheduleEditAlert', '오류: ' + e.message); }
+}
+
+async function deleteAdminSchedule(scheduleId, playerName) {
+  if (!confirm(`${playerName}의 일정을 삭제하시겠습니까?`)) return;
+  try {
+    await deleteDoc(doc(db, 'schedules', scheduleId));
+    await loadAdminSchedules();
+  } catch (e) { alert('오류: ' + e.message); }
 }
 
 // ── 설정 ──────────────────────────────────────────────────────────
@@ -452,9 +694,19 @@ window.onPlayerLeagueChange = onPlayerLeagueChange;
 window.addSelectedMembers = addSelectedMembers;
 window.openDeletePlayer = openDeletePlayer;
 window.confirmDeletePlayer = confirmDeletePlayer;
+window.openBonusModal = openBonusModal;
+window.saveBonusPoints = saveBonusPoints;
 window.onResultLeagueChange = onResultLeagueChange;
 window.openEditResult = openEditResult;
 window.adminSetResult = adminSetResult;
+window.loadEndedLeaguesForAdmin = loadEndedLeaguesForAdmin;
+window.onHistoryLeagueChange = onHistoryLeagueChange;
+window.openHistoryEditResult = openHistoryEditResult;
+window.deleteEndedLeague = deleteEndedLeague;
+window.loadAdminSchedules = loadAdminSchedules;
+window.openScheduleEdit = openScheduleEdit;
+window.saveScheduleEdit = saveScheduleEdit;
+window.deleteAdminSchedule = deleteAdminSchedule;
 window.changePassword = changePassword;
 
 init();

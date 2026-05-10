@@ -100,7 +100,7 @@ function renderStandings() {
       <td><strong>${p.name}</strong></td>
       <td class="wins">${p.wins}</td>
       <td class="losses">${p.losses}</td>
-      <td class="no-games">${p.noGames}</td>
+      <td class="no-games">${p.draws}</td>
       <td class="points">${p.points}</td>
       <td><div style="display:flex;align-items:center;gap:0.4rem;">
         <div class="progress-bar" style="width:55px;margin:0;"><div class="progress-fill" style="width:${pct}%"></div></div>
@@ -111,7 +111,7 @@ function renderStandings() {
 
   return `<div class="table-scroll">
     <table class="standings-table">
-      <thead><tr><th>순위</th><th>이름</th><th>승</th><th>패</th><th>미경기</th><th>승점</th><th>진행률</th></tr></thead>
+      <thead><tr><th>순위</th><th>이름</th><th>승</th><th>패</th><th>무</th><th>승점</th><th>진행률</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
   </div>`;

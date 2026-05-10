@@ -404,7 +404,7 @@ async function loadPlayers() {
     getDocs(collection(db, 'leagues', currentLeague.id, 'players')),
     getDocs(collection(db, 'leagues', currentLeague.id, 'matches'))
   ]);
-  allPlayers = ps.docs.map(d => ({ id: d.id, ...d.data() }));
+  allPlayers = ps.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.handicap ?? 0) - (a.handicap ?? 0));
   allMatches = ms.docs.map(d => ({ id: d.id, ...d.data() }));
   renderPlayerTab();
 }
@@ -566,7 +566,7 @@ async function loadResultData() {
     getDocs(collection(db, 'leagues', resultLeague.id, 'players')),
     getDocs(collection(db, 'leagues', resultLeague.id, 'matches'))
   ]);
-  resultPlayers = ps.docs.map(d => ({ id: d.id, ...d.data() }));
+  resultPlayers = ps.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.handicap ?? 0) - (a.handicap ?? 0));
   resultMatches = ms.docs.map(d => ({ id: d.id, ...d.data() }));
   if (prevSelected && resultPlayers.find(p => p.id === prevSelected)) {
     selectedResultPlayerId = prevSelected;

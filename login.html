@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>로그인 - 한큐빌리어드 리그</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a class="navbar-brand" href="index.html">🎱 한큐빌리어드</a>
+    <button class="nav-toggle" onclick="document.getElementById('navLinks').classList.toggle('open')">☰</button>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html" class="nav-link">순위표</a>
+      <a href="schedule.html" class="nav-link">경기 일정</a>
+      <a href="history.html" class="nav-link">이전 리그 결과</a>
+      <a href="members.html" class="nav-link">회원 목록</a>
+      <a href="admin.html" class="nav-link">관리자</a>
+      <a href="login.html" class="nav-link active" id="navLoginBtn">로그인</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="card" style="max-width:420px;margin:2rem auto;">
+    <div class="card-header">
+      <div class="card-title">🔑 로그인</div>
+    </div>
+    <div id="loginAlert"></div>
+    <div class="form-group">
+      <label class="form-label">이름</label>
+      <select class="form-control" id="loginPlayerSelect">
+        <option value="">-- 이름을 선택하세요 --</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">PIN 번호</label>
+      <input type="password" class="form-control" id="loginPin" maxlength="4" placeholder="4자리 숫자" inputmode="numeric" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn btn-gold btn-full" onclick="doLogin()">로그인</button>
+  </div>
+</div>
+
+<script type="module" src="js/login.js"></script>
+</body>
+</html>

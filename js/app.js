@@ -68,8 +68,25 @@ async function switchLeague(league) {
   if (saved) {
     const { id } = JSON.parse(saved);
     const player = allPlayers.find(p => p.id === id);
-    if (player) setEntryLoggedIn(player);
+    if (player) {
+      setEntryLoggedIn(player);
+    } else {
+      showWrongLeagueMessage(JSON.parse(saved).name);
+    }
   }
+}
+
+function showWrongLeagueMessage(name) {
+  document.getElementById('entryStep1').style.display = 'none';
+  document.getElementById('entryStep2').style.display = 'block';
+  document.getElementById('loggedInName').textContent = name;
+  document.getElementById('entryProgress').style.width = '0%';
+  document.getElementById('entryProgressText').textContent = '';
+  document.getElementById('entryMatchList').innerHTML = `
+    <div class="alert alert-info">
+      해당 리그는 회원님이 진행 중인 경기가 아닙니다.<br>
+      좌측 상단의 '다른 리그 보기'에서 회원님이 진행 중인 리그를 선택해주세요.
+    </div>`;
 }
 
 function onLeagueSelectorChange() {

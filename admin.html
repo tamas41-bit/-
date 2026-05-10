@@ -18,6 +18,7 @@
       <a href="history.html" class="nav-link">이전 리그 결과</a>
       <a href="members.html" class="nav-link">회원 목록</a>
       <a href="admin.html" class="nav-link active">관리자</a>
+      <a href="login.html" class="nav-link" id="navLoginBtn" style="display:none;">로그인</a>
       <span id="navUserName" class="nav-user-name" style="display:none;"></span>
       <button class="nav-logout" id="navLogoutBtn" style="display:none;" onclick="navLogout()">로그아웃</button>
     </div>
@@ -27,6 +28,7 @@
   (function(){
     const s = localStorage.getItem('hankyu_player');
     if(s){ const {name} = JSON.parse(s); document.getElementById('navUserName').textContent = name; document.getElementById('navUserName').style.display='flex'; document.getElementById('navLogoutBtn').style.display='block'; }
+    else { document.getElementById('navLoginBtn').style.display='block'; }
   })();
   function navLogout(){ localStorage.removeItem('hankyu_player'); location.reload(); }
 </script>

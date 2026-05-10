@@ -57,11 +57,12 @@
       <button class="btn btn-secondary btn-sm" onclick="adminLogout()">로그아웃</button>
     </div>
 
-    <div class="tabs" style="flex-wrap:wrap;">
+    <div class="tabs" style="flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
       <div class="tab active" id="atab-league"   onclick="switchAdminTab('league')">리그 관리</div>
       <div class="tab"        id="atab-players"  onclick="switchAdminTab('players')">리그 참가자 설정</div>
       <div class="tab"        id="atab-results"  onclick="switchAdminTab('results')">경기 결과 수정</div>
       <div class="tab"        id="atab-history"  onclick="switchAdminTab('history')">이전 리그 수정</div>
+      <div class="tab"        id="atab-yearlyscore" onclick="switchAdminTab('yearlyscore')">올해의 승점 관리</div>
       <div class="tab"        id="atab-members"  onclick="switchAdminTab('members')">회원 관리</div>
       <div class="tab"        id="atab-schedule" onclick="switchAdminTab('schedule')">경기 일정 관리</div>
       <div class="tab"        id="atab-settings" onclick="switchAdminTab('settings')">관리자 정보 설정</div>
@@ -220,6 +221,21 @@
           <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:0.75rem;">리그 전체 삭제 시 모든 데이터가 영구적으로 제거됩니다.</p>
           <button class="btn btn-danger" onclick="deleteEndedLeague()">이 리그 전체 삭제</button>
         </div>
+      </div>
+    </div>
+
+    <!-- 올해의 승점 관리 -->
+    <div class="tab-content" id="acontent-yearlyscore">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">올해의 승점 관리</div>
+          <span id="yearlyScoreCount" style="font-size:0.85rem;color:var(--text-muted)"></span>
+        </div>
+        <div style="background:var(--bg-table);border-radius:8px;padding:1rem;margin-bottom:1.25rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.7;">
+          <div style="font-weight:bold;color:var(--gold);">회원별 올해의 승점을 조회하고 수정할 수 있는 공간입니다.</div>
+        </div>
+        <div id="yearlyScoreAlert"></div>
+        <div id="yearlyScoreList"><div class="loading"><span class="spinner"></span></div></div>
       </div>
     </div>
 
@@ -442,6 +458,7 @@
     document.getElementById('atab-' + name).classList.add('active');
     document.getElementById('acontent-' + name).classList.add('active');
     if (name === 'history') loadEndedLeaguesForAdmin();
+    if (name === 'yearlyscore') loadYearlyScores();
     if (name === 'schedule') loadAdminSchedules();
   }
 </script>

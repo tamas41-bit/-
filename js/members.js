@@ -19,6 +19,7 @@ async function init() {
         <td>${i + 1}</td>
         <td><strong>${m.name}</strong></td>
         <td>${m.handicap ?? '-'}</td>
+        <td>${m.yearlyScore ?? '-'}</td>
       </tr>`).join('');
   } catch (e) {
     document.getElementById('memberTableBody').innerHTML =

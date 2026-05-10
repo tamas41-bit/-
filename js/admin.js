@@ -190,6 +190,48 @@ async function saveEditLeague() {
   } catch (e) { showAlert('editLeagueAlert', '오류: ' + e.message); }
 }
 
+// ── 올해의 승점 관리 ──────────────────────────────────────────────────
+
+async function loadYearlyScores() {
+  try {
+    const snap = await getDocs(query(collection(db, 'members'), orderBy('handicap', 'desc')));
+    const members = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    document.getElementById('yearlyScoreCount').textContent = `총 ${members.length}명`;
+    const el = document.getElementById('yearlyScoreList');
+    if (!members.length) {
+      el.innerHTML = '<div class="empty-state" style="padding:1rem;">등록된 회원이 없습니다</div>';
+      return;
+    }
+    el.innerHTML = members.map(m => `
+      <div class="player-row">
+        <span>
+          <strong>${m.name}</strong>
+          <span style="color:var(--text-muted);font-size:0.85rem;margin-left:0.4rem;">현재: ${m.yearlyScore ?? 0}점</span>
+        </span>
+        <div style="display:flex;gap:0.5rem;align-items:center;">
+          <input type="number" id="ys-input-${m.id}" value="${m.yearlyScore ?? 0}"
+            style="width:70px;padding:0.3rem 0.5rem;border:1px solid var(--border);border-radius:4px;background:var(--bg-input, var(--bg-table));color:var(--text-primary);font-size:0.9rem;text-align:center;"
+            min="0">
+          <button class="btn btn-sm btn-primary" onclick="saveYearlyScore('${m.id}','${m.name}')">저장</button>
+        </div>
+      </div>`).join('');
+  } catch (e) {
+    document.getElementById('yearlyScoreList').innerHTML =
+      `<div class="alert alert-error">불러오기 실패: ${e.message}</div>`;
+  }
+}
+
+async function saveYearlyScore(memberId, memberName) {
+  const input = document.getElementById(`ys-input-${memberId}`);
+  const val = parseInt(input.value);
+  if (isNaN(val) || val < 0) { showAlert('yearlyScoreAlert', '올바른 숫자를 입력하세요.'); return; }
+  try {
+    await updateDoc(doc(db, 'members', memberId), { yearlyScore: val });
+    showAlert('yearlyScoreAlert', `${memberName} 님의 올해의 승점이 ${val}점으로 저장되었습니다.`, 'success');
+    await loadYearlyScores();
+  } catch (e) { showAlert('yearlyScoreAlert', '저장 오류: ' + e.message); }
+}
+
 // ── 회원 관리 ──────────────────────────────────────────────────────
 
 async function loadMembers() {
@@ -797,6 +839,8 @@ async function restoreLeague() {
   } catch (e) { showAlert('historyAlert', '복원 오류: ' + e.message); }
 }
 window.restoreLeague = restoreLeague;
+window.loadYearlyScores = loadYearlyScores;
+window.saveYearlyScore = saveYearlyScore;
 
 // ── 일정 관리 ──────────────────────────────────────────────────────
 

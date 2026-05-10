@@ -10,7 +10,7 @@
 
 <nav class="navbar">
   <div class="navbar-inner">
-    <a class="navbar-brand" href="index.html">한큐빌리어드</a>
+    <a class="navbar-brand" href="index.html">한큐빌리어드</a><span id="navBrandUser" style="display:none;color:var(--text-secondary);font-size:0.82rem;margin-left:0.5rem;">[ <span id="navBrandUserName"></span> 님 ]</span>
     <button class="nav-toggle" onclick="document.getElementById('navLinks').classList.toggle('open')">☰</button>
     <div class="nav-links" id="navLinks">
       <a href="index.html" class="nav-link">순위표</a>
@@ -19,7 +19,7 @@
       <a href="members.html" class="nav-link">회원 목록</a>
       <a href="admin.html" class="nav-link active">관리자</a>
       <a href="login.html" class="nav-link" id="navLoginBtn" style="display:none;">로그인</a>
-      <a href="profile.html" id="navUserName" class="nav-user-name nav-link" style="display:none;"></a>
+      <a href="profile.html" id="navUserName" class="nav-user-name nav-link" style="display:none;">정보 변경</a>
       <button class="nav-logout" id="navLogoutBtn" style="display:none;" onclick="navLogout()">로그아웃</button>
     </div>
   </div>
@@ -27,7 +27,7 @@
 <script>
   (function(){
     const s = localStorage.getItem('hankyu_player');
-    if(s){ const {name} = JSON.parse(s); document.getElementById('navUserName').textContent = name; document.getElementById('navUserName').style.display='flex'; document.getElementById('navLogoutBtn').style.display='block'; }
+    if(s){ const {name} = JSON.parse(s); document.getElementById('navBrandUserName').textContent = name; document.getElementById('navBrandUser').style.display='inline'; document.getElementById('navUserName').style.display='flex'; document.getElementById('navLogoutBtn').style.display='block'; }
     else { document.getElementById('navLoginBtn').style.display='block'; }
   })();
   function navLogout(){ localStorage.removeItem('hankyu_player'); location.reload(); }

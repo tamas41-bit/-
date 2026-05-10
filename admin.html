@@ -16,6 +16,7 @@
       <a href="index.html" class="nav-link">순위표</a>
       <a href="schedule.html" class="nav-link">경기 일정</a>
       <a href="history.html" class="nav-link">이전 리그 결과</a>
+      <a href="members.html" class="nav-link">회원 목록</a>
       <a href="admin.html" class="nav-link active">관리자</a>
     </div>
   </div>
@@ -46,10 +47,11 @@
     </div>
 
     <div class="tabs">
-      <div class="tab active" id="atab-league" onclick="switchAdminTab('league')">리그 관리</div>
-      <div class="tab" id="atab-players" onclick="switchAdminTab('players')">선수 관리</div>
-      <div class="tab" id="atab-results" onclick="switchAdminTab('results')">결과 수정</div>
-      <div class="tab" id="atab-settings" onclick="switchAdminTab('settings')">설정</div>
+      <div class="tab active" id="atab-league"   onclick="switchAdminTab('league')">리그 관리</div>
+      <div class="tab"        id="atab-members"  onclick="switchAdminTab('members')">회원 관리</div>
+      <div class="tab"        id="atab-players"  onclick="switchAdminTab('players')">선수 관리</div>
+      <div class="tab"        id="atab-results"  onclick="switchAdminTab('results')">결과 수정</div>
+      <div class="tab"        id="atab-settings" onclick="switchAdminTab('settings')">설정</div>
     </div>
 
     <!-- 리그 관리 -->
@@ -90,27 +92,42 @@
       </div>
     </div>
 
+    <!-- 회원 관리 -->
+    <div class="tab-content" id="acontent-members">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">👥 회원 관리</div>
+          <span id="memberCount" style="font-size:0.85rem;color:var(--text-muted)"></span>
+        </div>
+        <div id="memberAlert"></div>
+        <div style="display:flex;gap:0.6rem;margin-bottom:0.75rem;flex-wrap:wrap;">
+          <input type="text" class="form-control" id="newMemberName" placeholder="이름" style="flex:1;min-width:100px;">
+          <input type="number" class="form-control" id="newMemberHandicap" placeholder="핸디" style="width:80px;" min="0">
+          <input type="text" class="form-control" id="newMemberPin" placeholder="PIN 4자리" maxlength="4" inputmode="numeric" style="width:110px;">
+          <button class="btn btn-primary" onclick="addMember()">추가</button>
+        </div>
+        <div id="memberList"><div class="loading"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+
     <!-- 선수 관리 -->
     <div class="tab-content" id="acontent-players">
       <div class="card">
         <div class="card-header">
-          <div class="card-title">👥 선수 관리</div>
+          <div class="card-title">🏅 이번 리그 참가자</div>
           <span id="playerCount" style="font-size:0.85rem;color:var(--text-muted)"></span>
         </div>
         <div id="playerAlert"></div>
-
-        <!-- 선수 추가 -->
-        <div style="display:flex;gap:0.6rem;margin-bottom:0.75rem;flex-wrap:wrap;">
-          <input type="text" class="form-control" id="newPlayerName" placeholder="이름" style="flex:1;min-width:120px;">
-          <input type="text" class="form-control" id="newPlayerPin" placeholder="PIN 4자리" maxlength="4" inputmode="numeric" style="width:110px;">
-          <button class="btn btn-primary" onclick="addPlayer()">추가</button>
-        </div>
-
-        <button class="btn btn-secondary btn-sm" style="margin-bottom:1rem;" onclick="importPrevPlayers()">
-          이전 리그 참가자 불러오기
-        </button>
-
         <div id="playerList"><div class="loading"><span class="spinner"></span></div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">➕ 회원에서 참가자 추가</div>
+        </div>
+        <div id="memberSelectAlert"></div>
+        <div id="memberSelectList"><div class="loading"><span class="spinner"></span></div></div>
+        <button class="btn btn-gold btn-full" style="margin-top:1rem;" onclick="addSelectedMembers()">선택한 회원 추가</button>
       </div>
     </div>
 
@@ -179,6 +196,19 @@
     <div style="display:flex;gap:0.65rem;">
       <button class="btn btn-danger btn-full" onclick="confirmDeletePlayer()">삭제</button>
       <button class="btn btn-secondary btn-full" onclick="document.getElementById('deletePlayerModal').classList.remove('active')">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- 회원 삭제 모달 -->
+<div class="modal-overlay" id="deleteMemberModal">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('deleteMemberModal').classList.remove('active')">✕</button>
+    <div class="modal-title">회원 삭제</div>
+    <div id="deleteMemberInfo" style="margin-bottom:1.25rem;color:var(--text-secondary);font-size:0.9rem;"></div>
+    <div style="display:flex;gap:0.65rem;">
+      <button class="btn btn-danger btn-full" onclick="confirmDeleteMember()">삭제</button>
+      <button class="btn btn-secondary btn-full" onclick="document.getElementById('deleteMemberModal').classList.remove('active')">취소</button>
     </div>
   </div>
 </div>

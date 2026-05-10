@@ -8,7 +8,9 @@ import { hashString, showAlert, generateMatchPairs } from './utils.js';
 let currentLeague = null;
 let allPlayers = [];
 let allMatches = [];
+let allMembers = [];
 let playerToDelete = null;
+let memberToDelete = null;
 let editingMatchId = null;
 
 async function init() {
@@ -48,9 +50,11 @@ function adminLogout() {
 }
 
 async function loadAll() {
-  await loadLeague();
+  await Promise.all([loadLeague(), loadMembers()]);
   await loadPlayers();
 }
+
+// ── 리그 관리 ──────────────────────────────────────────────────────
 
 async function loadLeague() {
   const snap = await getDocs(query(collection(db, 'leagues'), where('active', '==', true), limit(1)));
@@ -75,10 +79,131 @@ async function loadLeague() {
   </div>`;
 }
 
+async function createLeague() {
+  const name = document.getElementById('leagueName').value.trim();
+  const win = parseInt(document.getElementById('scoreWin').value) || 0;
+  const loss = parseInt(document.getElementById('scoreLoss').value) || 0;
+  const noGame = parseInt(document.getElementById('scoreNoGame').value) || 0;
+  if (!name) { showAlert('createLeagueAlert', '리그 이름을 입력하세요.'); return; }
+  if (currentLeague && !confirm(`"${currentLeague.name}" 리그를 종료하고 새 리그를 시작하시겠습니까?`)) return;
+
+  try {
+    const batch = writeBatch(db);
+    if (currentLeague) batch.update(doc(db, 'leagues', currentLeague.id), { active: false });
+    const newRef = doc(collection(db, 'leagues'));
+    batch.set(newRef, { name, active: true, scoring: { win, loss, noGame }, createdAt: serverTimestamp() });
+    await batch.commit();
+
+    currentLeague = { id: newRef.id, name, active: true, scoring: { win, loss, noGame } };
+    allPlayers = []; allMatches = [];
+
+    showAlert('createLeagueAlert', '리그가 생성되었습니다! 선수 관리 탭에서 참가자를 등록하세요.', 'success');
+    document.getElementById('leagueName').value = '';
+    await loadLeague();
+    await loadPlayers();
+  } catch (e) { showAlert('createLeagueAlert', '오류: ' + e.message); }
+}
+
+async function endLeague() {
+  if (!currentLeague || !confirm(`"${currentLeague.name}" 리그를 종료하시겠습니까?`)) return;
+  await updateDoc(doc(db, 'leagues', currentLeague.id), { active: false });
+  currentLeague = null; allPlayers = []; allMatches = [];
+  await loadAll();
+}
+
+// ── 회원 관리 ──────────────────────────────────────────────────────
+
+async function loadMembers() {
+  try {
+    const snap = await getDocs(query(collection(db, 'members'), orderBy('name')));
+    allMembers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    document.getElementById('memberCount').textContent = `총 ${allMembers.length}명`;
+    renderMemberList();
+  } catch (e) {
+    document.getElementById('memberList').innerHTML = `<div class="alert alert-error">불러오기 실패: ${e.message}</div>`;
+  }
+}
+
+async function addMember() {
+  const name = document.getElementById('newMemberName').value.trim();
+  const handicapVal = document.getElementById('newMemberHandicap').value.trim();
+  const pin = document.getElementById('newMemberPin').value.trim();
+  if (!name) { showAlert('memberAlert', '이름을 입력하세요.'); return; }
+  if (!/^\d{4}$/.test(pin)) { showAlert('memberAlert', 'PIN은 숫자 4자리입니다.'); return; }
+  if (allMembers.some(m => m.name === name)) { showAlert('memberAlert', '이미 등록된 회원입니다.'); return; }
+
+  try {
+    const pinHash = await hashString(pin);
+    const handicap = handicapVal !== '' ? parseInt(handicapVal) : 0;
+    await setDoc(doc(collection(db, 'members')), { name, handicap, pinHash });
+    document.getElementById('newMemberName').value = '';
+    document.getElementById('newMemberHandicap').value = '';
+    document.getElementById('newMemberPin').value = '';
+    showAlert('memberAlert', `${name} 회원이 등록되었습니다.`, 'success');
+    await loadMembers();
+    renderMemberSelectForLeague();
+  } catch (e) { showAlert('memberAlert', '오류: ' + e.message); }
+}
+
+function renderMemberList() {
+  const el = document.getElementById('memberList');
+  if (!allMembers.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:1rem;">등록된 회원이 없습니다</div>';
+    return;
+  }
+  el.innerHTML = allMembers.map((m, i) => `
+    <div class="player-row">
+      <span>
+        <strong>${m.name}</strong>
+        ${m.handicap != null ? `<span style="color:var(--text-muted);font-size:0.85rem;margin-left:0.4rem;">핸디 ${m.handicap}</span>` : ''}
+      </span>
+      <div style="display:flex;gap:0.5rem;">
+        <button class="btn btn-sm btn-secondary" onclick="promptResetMemberPin('${m.id}','${m.name}')">PIN 변경</button>
+        <button class="btn btn-sm btn-danger" onclick="openDeleteMember('${m.id}','${m.name}')">삭제</button>
+      </div>
+    </div>`).join('');
+}
+
+async function promptResetMemberPin(memberId, memberName) {
+  const newPin = prompt(`${memberName}의 새 PIN (숫자 4자리):`);
+  if (!newPin) return;
+  if (!/^\d{4}$/.test(newPin)) { alert('PIN은 숫자 4자리입니다.'); return; }
+  const pinHash = await hashString(newPin);
+  const batch = writeBatch(db);
+  batch.update(doc(db, 'members', memberId), { pinHash });
+  if (currentLeague) {
+    const player = allPlayers.find(p => p.memberId === memberId);
+    if (player) batch.update(doc(db, 'leagues', currentLeague.id, 'players', player.id), { pinHash });
+  }
+  await batch.commit();
+  showAlert('memberAlert', `${memberName} PIN이 변경되었습니다.`, 'success');
+  await loadMembers();
+}
+
+function openDeleteMember(memberId, memberName) {
+  memberToDelete = memberId;
+  document.getElementById('deleteMemberInfo').textContent = `"${memberName}" 회원을 삭제하시겠습니까? (현재 리그 참가자에서는 제거되지 않습니다)`;
+  document.getElementById('deleteMemberModal').classList.add('active');
+}
+
+async function confirmDeleteMember() {
+  if (!memberToDelete) return;
+  try {
+    await deleteDoc(doc(db, 'members', memberToDelete));
+    document.getElementById('deleteMemberModal').classList.remove('active');
+    memberToDelete = null;
+    await loadMembers();
+    renderMemberSelectForLeague();
+  } catch (e) { alert('오류: ' + e.message); }
+}
+
+// ── 선수 관리 ──────────────────────────────────────────────────────
+
 async function loadPlayers() {
   if (!currentLeague) {
     document.getElementById('playerList').innerHTML = '<div class="alert alert-info">리그를 먼저 생성하세요.</div>';
     document.getElementById('adminMatchList').innerHTML = '<div class="alert alert-info">리그를 먼저 생성하세요.</div>';
+    document.getElementById('memberSelectList').innerHTML = '<div class="alert alert-info">리그를 먼저 생성하세요.</div>';
     return;
   }
   const [ps, ms] = await Promise.all([
@@ -90,20 +215,118 @@ async function loadPlayers() {
   document.getElementById('playerCount').textContent = `총 ${allPlayers.length}명`;
   renderPlayerList();
   renderAdminMatchList();
+  renderMemberSelectForLeague();
 }
 
 function renderPlayerList() {
   const el = document.getElementById('playerList');
-  if (!allPlayers.length) { el.innerHTML = '<div class="empty-state" style="padding:1rem;">등록된 선수가 없습니다</div>'; return; }
+  if (!allPlayers.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:1rem;">등록된 선수가 없습니다</div>';
+    return;
+  }
   el.innerHTML = allPlayers.map(p => `
     <div class="player-row">
-      <span><strong>${p.name}</strong></span>
+      <span>
+        <strong>${p.name}</strong>
+        ${p.handicap != null ? `<span style="color:var(--text-muted);font-size:0.85rem;margin-left:0.4rem;">핸디 ${p.handicap}</span>` : ''}
+      </span>
       <div style="display:flex;gap:0.5rem;">
-        <button class="btn btn-sm btn-secondary" onclick="promptResetPin('${p.id}','${p.name}')">PIN 변경</button>
         <button class="btn btn-sm btn-danger" onclick="openDeletePlayer('${p.id}','${p.name}')">삭제</button>
       </div>
     </div>`).join('');
 }
+
+function renderMemberSelectForLeague() {
+  const el = document.getElementById('memberSelectList');
+  if (!el) return;
+  if (!currentLeague) {
+    el.innerHTML = '<div class="alert alert-info">리그를 먼저 생성하세요.</div>';
+    return;
+  }
+  if (!allMembers.length) {
+    el.innerHTML = '<div class="empty-state">등록된 회원이 없습니다. 먼저 회원 관리 탭에서 회원을 등록하세요.</div>';
+    return;
+  }
+  const enrolledNames = new Set(allPlayers.map(p => p.name));
+  const available = allMembers.filter(m => !enrolledNames.has(m.name));
+  if (!available.length) {
+    el.innerHTML = '<div class="empty-state">모든 회원이 이미 이번 리그 참가자로 등록되어 있습니다.</div>';
+    return;
+  }
+  el.innerHTML = available.map(m => `
+    <label class="player-row" style="cursor:pointer;user-select:none;">
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <input type="checkbox" value="${m.id}" style="width:16px;height:16px;accent-color:var(--gold);cursor:pointer;">
+        <span>
+          <strong>${m.name}</strong>
+          ${m.handicap != null ? `<span style="color:var(--text-muted);font-size:0.85rem;margin-left:0.4rem;">핸디 ${m.handicap}</span>` : ''}
+        </span>
+      </div>
+    </label>`).join('');
+}
+
+async function addSelectedMembers() {
+  if (!currentLeague) { showAlert('memberSelectAlert', '리그를 먼저 생성하세요.'); return; }
+  const checked = [...document.querySelectorAll('#memberSelectList input[type=checkbox]:checked')];
+  if (!checked.length) { showAlert('memberSelectAlert', '추가할 회원을 선택하세요.'); return; }
+
+  const selectedIds = checked.map(c => c.value);
+  const selectedMembers = allMembers.filter(m => selectedIds.includes(m.id));
+
+  try {
+    const batch = writeBatch(db);
+    const newPlayerIds = [];
+
+    selectedMembers.forEach(m => {
+      const ref = doc(collection(db, 'leagues', currentLeague.id, 'players'));
+      batch.set(ref, {
+        name: m.name,
+        handicap: m.handicap ?? 0,
+        pinHash: m.pinHash,
+        memberId: m.id
+      });
+      newPlayerIds.push(ref.id);
+    });
+
+    const existingIds = allPlayers.map(p => p.id);
+    const allIds = [...existingIds, ...newPlayerIds];
+    const existingPairs = new Set(allMatches.map(m => `${m.player1Id}|${m.player2Id}`));
+
+    allIds.forEach((id1, i) => {
+      allIds.slice(i + 1).forEach(id2 => {
+        if (!newPlayerIds.includes(id1) && !newPlayerIds.includes(id2)) return;
+        const key1 = `${id1}|${id2}`, key2 = `${id2}|${id1}`;
+        if (existingPairs.has(key1) || existingPairs.has(key2)) return;
+        const ref = doc(collection(db, 'leagues', currentLeague.id, 'matches'));
+        batch.set(ref, { player1Id: id1, player2Id: id2, result: null, winnerId: null, reportedBy: null, reportedAt: null });
+      });
+    });
+
+    await batch.commit();
+    showAlert('memberSelectAlert', `${selectedMembers.length}명이 참가자로 추가되었습니다!`, 'success');
+    await loadPlayers();
+  } catch (e) { showAlert('memberSelectAlert', '오류: ' + e.message); }
+}
+
+function openDeletePlayer(playerId, playerName) {
+  playerToDelete = playerId;
+  document.getElementById('deletePlayerInfo').textContent = `"${playerName}" 선수를 삭제하면 관련 경기 기록도 모두 삭제됩니다.`;
+  document.getElementById('deletePlayerModal').classList.add('active');
+}
+
+async function confirmDeletePlayer() {
+  if (!playerToDelete || !currentLeague) return;
+  const batch = writeBatch(db);
+  batch.delete(doc(db, 'leagues', currentLeague.id, 'players', playerToDelete));
+  allMatches.filter(m => m.player1Id === playerToDelete || m.player2Id === playerToDelete)
+    .forEach(m => batch.delete(doc(db, 'leagues', currentLeague.id, 'matches', m.id)));
+  await batch.commit();
+  document.getElementById('deletePlayerModal').classList.remove('active');
+  playerToDelete = null;
+  await loadPlayers();
+}
+
+// ── 결과 수정 ──────────────────────────────────────────────────────
 
 function renderAdminMatchList() {
   const el = document.getElementById('adminMatchList');
@@ -126,123 +349,6 @@ function renderAdminMatchList() {
       <button class="btn btn-sm btn-secondary" onclick="openEditResult('${m.id}','${m.player1Id}','${m.player2Id}','${p1n}','${p2n}')">수정</button>
     </div>`;
   }).join('');
-}
-
-async function createLeague() {
-  const name = document.getElementById('leagueName').value.trim();
-  const win = parseInt(document.getElementById('scoreWin').value) || 0;
-  const loss = parseInt(document.getElementById('scoreLoss').value) || 0;
-  const noGame = parseInt(document.getElementById('scoreNoGame').value) || 0;
-  if (!name) { showAlert('createLeagueAlert', '리그 이름을 입력하세요.'); return; }
-  if (currentLeague && !confirm(`"${currentLeague.name}" 리그를 종료하고 새 리그를 시작하시겠습니까?`)) return;
-
-  try {
-    const batch = writeBatch(db);
-    if (currentLeague) batch.update(doc(db, 'leagues', currentLeague.id), { active: false });
-    const newRef = doc(collection(db, 'leagues'));
-    batch.set(newRef, { name, active: true, scoring: { win, loss, noGame }, createdAt: serverTimestamp() });
-    await batch.commit();
-
-    currentLeague = { id: newRef.id, name, active: true, scoring: { win, loss, noGame } };
-    allPlayers = []; allMatches = [];
-
-    showAlert('createLeagueAlert', '리그가 생성되었습니다! 선수 관리 탭에서 참가자를 등록하세요.', 'success');
-    document.getElementById('leagueName').value = '';
-    await loadLeague();
-    loadPlayers();
-  } catch (e) { showAlert('createLeagueAlert', '오류: ' + e.message); }
-}
-
-async function importPrevPlayers() {
-  if (!currentLeague) { showAlert('playerAlert', '먼저 리그를 생성하세요.'); return; }
-  const snap = await getDocs(query(collection(db, 'leagues'), where('active', '==', false), orderBy('createdAt', 'desc'), limit(1)));
-  if (snap.empty) { showAlert('playerAlert', '이전 리그가 없습니다.'); return; }
-  const prevId = snap.docs[0].id;
-  const prevPlayers = await getDocs(collection(db, 'leagues', prevId, 'players'));
-  if (prevPlayers.empty) { showAlert('playerAlert', '이전 리그에 선수가 없습니다.'); return; }
-  if (!confirm('이전 리그 참가자를 현재 리그로 불러오시겠습니까?')) return;
-
-  const batch = writeBatch(db);
-  const importedIds = [];
-  prevPlayers.docs.forEach(d => {
-    const data = d.data();
-    const existing = allPlayers.find(p => p.name === data.name);
-    if (!existing) {
-      const ref = doc(collection(db, 'leagues', currentLeague.id, 'players'));
-      batch.set(ref, { name: data.name, pinHash: data.pinHash });
-      importedIds.push(ref.id);
-    }
-  });
-
-  const existingIds = allPlayers.map(p => p.id);
-  const allIds = [...existingIds, ...importedIds];
-  generateMatchPairs(allIds).forEach((pair, i) => {
-    if (existingIds.includes(pair.player1Id) && existingIds.includes(pair.player2Id)) return;
-    const ref = doc(collection(db, 'leagues', currentLeague.id, 'matches'));
-    batch.set(ref, pair);
-  });
-
-  await batch.commit();
-  showAlert('playerAlert', '불러오기 완료!', 'success');
-  await loadPlayers();
-}
-
-async function endLeague() {
-  if (!currentLeague || !confirm(`"${currentLeague.name}" 리그를 종료하시겠습니까?`)) return;
-  await updateDoc(doc(db, 'leagues', currentLeague.id), { active: false });
-  currentLeague = null; allPlayers = []; allMatches = [];
-  await loadAll();
-}
-
-async function addPlayer() {
-  if (!currentLeague) { showAlert('playerAlert', '리그를 먼저 생성하세요.'); return; }
-  const name = document.getElementById('newPlayerName').value.trim();
-  const pin = document.getElementById('newPlayerPin').value.trim();
-  if (!name) { showAlert('playerAlert', '이름을 입력하세요.'); return; }
-  if (!/^\d{4}$/.test(pin)) { showAlert('playerAlert', 'PIN은 숫자 4자리입니다.'); return; }
-  if (allPlayers.some(p => p.name === name)) { showAlert('playerAlert', '이미 등록된 이름입니다.'); return; }
-
-  try {
-    const pinHash = await hashString(pin);
-    const playerRef = doc(collection(db, 'leagues', currentLeague.id, 'players'));
-    const batch = writeBatch(db);
-    batch.set(playerRef, { name, pinHash });
-    allPlayers.forEach(existing => {
-      const mRef = doc(collection(db, 'leagues', currentLeague.id, 'matches'));
-      batch.set(mRef, { player1Id: existing.id, player2Id: playerRef.id, result: null, winnerId: null, reportedBy: null, reportedAt: null });
-    });
-    await batch.commit();
-    document.getElementById('newPlayerName').value = '';
-    document.getElementById('newPlayerPin').value = '';
-    showAlert('playerAlert', `${name} 선수가 등록되었습니다.`, 'success');
-    await loadPlayers();
-  } catch (e) { showAlert('playerAlert', '오류: ' + e.message); }
-}
-
-async function promptResetPin(playerId, playerName) {
-  const newPin = prompt(`${playerName}의 새 PIN (숫자 4자리):`);
-  if (!newPin) return;
-  if (!/^\d{4}$/.test(newPin)) { alert('PIN은 숫자 4자리입니다.'); return; }
-  await updateDoc(doc(db, 'leagues', currentLeague.id, 'players', playerId), { pinHash: await hashString(newPin) });
-  showAlert('playerAlert', `${playerName} PIN이 변경되었습니다.`, 'success');
-}
-
-function openDeletePlayer(playerId, playerName) {
-  playerToDelete = playerId;
-  document.getElementById('deletePlayerInfo').textContent = `"${playerName}" 선수를 삭제하면 관련 경기 기록도 모두 삭제됩니다.`;
-  document.getElementById('deletePlayerModal').classList.add('active');
-}
-
-async function confirmDeletePlayer() {
-  if (!playerToDelete || !currentLeague) return;
-  const batch = writeBatch(db);
-  batch.delete(doc(db, 'leagues', currentLeague.id, 'players', playerToDelete));
-  allMatches.filter(m => m.player1Id === playerToDelete || m.player2Id === playerToDelete)
-    .forEach(m => batch.delete(doc(db, 'leagues', currentLeague.id, 'matches', m.id)));
-  await batch.commit();
-  document.getElementById('deletePlayerModal').classList.remove('active');
-  playerToDelete = null;
-  await loadPlayers();
 }
 
 function openEditResult(matchId, p1Id, p2Id, p1Name, p2Name) {
@@ -269,6 +375,8 @@ async function adminSetResult(result) {
   } catch (e) { showAlert('editModalAlert', '오류: ' + e.message); }
 }
 
+// ── 설정 ──────────────────────────────────────────────────────────
+
 async function changePassword() {
   const cur = document.getElementById('currentPassword').value;
   const nw = document.getElementById('newPassword').value;
@@ -287,9 +395,11 @@ window.adminLogin = adminLogin;
 window.adminLogout = adminLogout;
 window.createLeague = createLeague;
 window.endLeague = endLeague;
-window.importPrevPlayers = importPrevPlayers;
-window.addPlayer = addPlayer;
-window.promptResetPin = promptResetPin;
+window.addMember = addMember;
+window.promptResetMemberPin = promptResetMemberPin;
+window.openDeleteMember = openDeleteMember;
+window.confirmDeleteMember = confirmDeleteMember;
+window.addSelectedMembers = addSelectedMembers;
 window.openDeletePlayer = openDeletePlayer;
 window.confirmDeletePlayer = confirmDeletePlayer;
 window.openEditResult = openEditResult;

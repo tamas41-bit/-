@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>이전 리그 결과 - 한큐빌리어드 리그</title>
+  <title>회원 목록 - 한큐빌리어드 리그</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -15,31 +15,36 @@
     <div class="nav-links" id="navLinks">
       <a href="index.html" class="nav-link">순위표</a>
       <a href="schedule.html" class="nav-link">경기 일정</a>
-      <a href="history.html" class="nav-link active">이전 리그 결과</a>
-      <a href="members.html" class="nav-link">회원 목록</a>
+      <a href="history.html" class="nav-link">이전 리그 결과</a>
+      <a href="members.html" class="nav-link active">회원 목록</a>
       <a href="admin.html" class="nav-link">관리자</a>
     </div>
   </div>
 </nav>
 
 <div class="container">
-
   <div class="card">
     <div class="card-header">
-      <div class="card-title">📋 이전 리그 결과</div>
+      <div class="card-title">👥 회원 목록</div>
+      <span id="memberCount" style="font-size:0.85rem;color:var(--text-muted)"></span>
     </div>
-    <div class="form-group">
-      <label class="form-label">리그 선택</label>
-      <select class="form-control" id="leagueSelect" onchange="onLeagueSelect()">
-        <option value="">불러오는 중...</option>
-      </select>
+    <div class="table-scroll">
+      <table class="standings-table">
+        <thead>
+          <tr>
+            <th>번호</th>
+            <th>이름</th>
+            <th>핸디</th>
+          </tr>
+        </thead>
+        <tbody id="memberTableBody">
+          <tr><td colspan="3"><div class="loading"><span class="spinner"></span></div></td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
-
-  <div id="historyContent"></div>
-
 </div>
 
-<script type="module" src="js/history.js"></script>
+<script type="module" src="js/members.js"></script>
 </body>
 </html>

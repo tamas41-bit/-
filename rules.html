@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>한큐 회칙 - 한큐빌리어드 리그</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .rules-chapter {
+      margin-bottom: 2rem;
+    }
+    .rules-chapter-title {
+      font-size: 1.05rem;
+      font-weight: bold;
+      color: var(--gold);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.4rem;
+      margin-bottom: 1rem;
+    }
+    .rules-article {
+      margin-bottom: 1.1rem;
+    }
+    .rules-article-title {
+      font-weight: bold;
+      color: var(--text-primary);
+      margin-bottom: 0.3rem;
+    }
+    .rules-article-body {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.8;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a class="navbar-brand" href="index.html">한큐빌리어드</a><span id="navBrandUser" style="display:none;color:var(--gold);font-weight:bold;font-size:0.82rem;margin-left:0.5rem;">[ <span id="navBrandUserName"></span> 님 ]</span>
+    <button class="nav-toggle" onclick="document.getElementById('navLinks').classList.toggle('open')">☰</button>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html" class="nav-link">리그전 현황</a>
+      <a href="schedule.html" class="nav-link">경기 가능 일정</a>
+      <a href="history.html" class="nav-link">이전 리그 결과</a>
+      <a href="members.html" class="nav-link">회원 목록</a>
+      <a href="rules.html" class="nav-link active">한큐 회칙</a>
+      <a href="lecture.html" class="nav-link" style="display:none;">당구 강의 게시판</a>
+      <a href="admin.html" class="nav-link">관리자</a>
+      <a href="login.html" class="nav-link" id="navLoginBtn" style="display:none;">로그인</a>
+      <a href="profile.html" id="navUserName" class="nav-user-name nav-link" style="display:none;">정보 변경</a>
+      <button class="nav-logout" id="navLogoutBtn" style="display:none;" onclick="navLogout()">로그아웃</button>
+    </div>
+  </div>
+</nav>
+<script>
+  (function(){
+    const s = localStorage.getItem('hankyu_player');
+    if(s){ const {name} = JSON.parse(s); document.getElementById('navBrandUserName').textContent = name; document.getElementById('navBrandUser').style.display='inline'; document.getElementById('navUserName').style.display='flex'; document.getElementById('navLogoutBtn').style.display='block'; }
+    else { document.getElementById('navLoginBtn').style.display='block'; }
+  })();
+  function navLogout(){ localStorage.removeItem('hankyu_player'); location.reload(); }
+</script>
+
+<div class="container">
+  <div class="card" style="max-width:720px;margin:0 auto;">
+    <div class="card-header">
+      <div class="card-title">한큐 회칙</div>
+      <span style="font-size:0.8rem;color:var(--text-muted);">한큐 빌리어드 클럽 2025</span>
+    </div>
+
+    <!-- 제 1 장 -->
+    <div class="rules-chapter">
+      <div class="rules-chapter-title">제 1 장 &nbsp; 총 칙</div>
+
+      <div class="rules-article">
+        <div class="rules-article-title">제 1 조 [명 칭]</div>
+        <div class="rules-article-body">이 모임은 "한큐 빌리어드 클럽 2025"라 칭한다. 이하 본회라 칭한다.</div>
+      </div>
+      <div class="rules-article">
+        <div class="rules-article-title">제 2 조 [목 적]</div>
+        <div class="rules-article-body">본회는 당구의 올바른 보급과 저변 확대 및 정보 교환과 친목도모를 목적으로 한다.</div>
+      </div>
+      <div class="rules-article">
+        <div class="rules-article-title">제 3 조 [성 격]</div>
+        <div class="rules-article-body">본회는 쿠션당구에 속한 모든 부분을 전문으로 다루며, 비영리를 추구하는 순수한 친목모임이다.</div>
+      </div>
+      <div class="rules-article">
+        <div class="rules-article-title">제 4 조 [활 동]</div>
+        <div class="rules-article-body">본회는 카카오톡 및 밴드를 통한 on-line 활동 및 친목과 쓰리쿠션당구의 실력향상 도모를 위한 off-line 활동을 주축으로 한다.</div>
+      </div>
+    </div>
+
+    <!-- 제 2 장 -->
+    <div class="rules-chapter">
+      <div class="rules-chapter-title">제 2 장 &nbsp; 회 원</div>
+
+      <div class="rules-article">
+        <div class="rules-article-title">제 1 조 [자 격]</div>
+        <div class="rules-article-body">1. 진정으로 당구를 사랑하는 사람
+2. 스포츠 정신을 가지고 당구를 즐기고자 하는 사람 &amp; 배우고자 하는 사람.
+3. Teamwork 정신을 가지고 본회의 모임에 적극적으로 참여하는 의사를 가지는 사람.</div>
+      </div>
+      <div class="rules-article">
+        <div class="rules-article-title">제 2 조 [회원 구분]</div>
+        <div class="rules-article-body">회장, 총무, 기술 고문, 정회원, 준회원으로 구분한다.
+1. 회장
+본 회의 회장으로 연말 정기총회에 선거로 선출되며, 모임의 전체적인 운영 및 관리를 담당한다.
+2. 총무
+본 회의 총무로 당선된 회장이 직접 임명하며 회장과 함께 운영에 필요한 관리를 지원한다.
+3. 기술고문
+본 회의 회원들의 실력향상에 초점을 맡는 반면, 본 회의 대내외적 실력의 표본이 되어야 한다.
+4. 정회원
+본 회의 모든 인원은 정회원으로서의 자격과 운영진 그룹의 행사 및 진행에 따를 의무를 가진다.
+5. 준회원
+ 1) 가입 대기 중인 자
+ 2) 정회원이었지만 리그전 참여가 안되는 자
+6. 회원 가입
+ 1) 신규회원은 준회원이 되며 익월 시작시 동호회원 2/3의 동의를 얻어 정회원이 된다.
+ 2) 정회원 가입비는 10만원이다.</div>
+      </div>
+      <div class="rules-article">
+        <div class="rules-article-title">제 3 조 [탈퇴 및 재가입]</div>
+        <div class="rules-article-body">1. 회원은 자신의 의사로 탈퇴 할 수 있다.
+(단, 자진 탈퇴자의 재가입은 운영진이 결정한다.)
+
+2. 다음과 같은 경우, 제적 탈퇴나 자진 탈퇴 의사로 간주한다.
+ 1) 본회의 위신을 실추시킨 자
+ 2) 4회 이상 회비 미납자
+3. 재가입은 정회원들(2/3이상)의 승인을 받은 뒤 익월부터 참여할 수 있다.</div>
+      </div>
+    </div>
+
+    <!-- 제 3 장 -->
+    <div class="rules-chapter">
+      <div class="rules-chapter-title">제 3 장 &nbsp; 활 동</div>
+
+      <div class="rules-article">
+        <div class="rules-article-title">제 1 조 [리그전]</div>
+        <div class="rules-article-body">1. 본 회의 리그전은 친목도모와 정보교환, 회원개인의 당구 기술력 향상, 친목의 장으로 활용한다.
+2. 리그전은 매월 1일부터 시작하며 당월 월례회 당일 오후 7시까지 인정한다.
+3. 주 모임 장소는 사직동 제제빌리어드이다. 부득이 다른 곳에서 해야 할 경우엔 운영진에게 미리 통보하여 승인을 얻었을 경우 가능하다.</div>
+      </div>
+      <div class="rules-article">
+        <div class="rules-article-title">제 2 조 [월례회]</div>
+        <div class="rules-article-body">월례회는 매월 마지막 주 일요일 밤 9시~10시 사이 개최를 원칙으로 하되 시간 변경은 다소 유동적일 수 있다.</div>
+      </div>
+      <div class="rules-article">
+        <div class="rules-article-title">제 3 조 [회 비]</div>
+        <div class="rules-article-body">1. 회원은 매월 초에 회비 30,000원을 총무에게 납부한다.
+2. 회비는 정기모임 운영과 기타 경비로 지출하고 남는 부분은 적립된다.
+3. 미납입 금액은 차회 월례회에 납부가 가능하며 4회 이상 미납 시에 제적이 된다.</div>
+      </div>
+      <div class="rules-article">
+        <div class="rules-article-title">제 4 조 [에버리지]</div>
+        <div class="rules-article-body">1. 각 리그 1등은 +1점, 꼴찌는 –1점의 승감제가 있다.
+2. 스타트 에버리지에서 최대 3점까지 한계로 한다.
+ 1) 최대 점수 달성 이후 3번 연속 3위권안에 들지 못할 시에 –1점
+ 2) 최하 점수 달성 이후 3번 연속 7~8위권을 벗어나면 +1점
+3. 스타트 에버리지는 매년 초에 각자의 점수와 점수 조정위원회의 수정을 거쳐 정한다.
+ 1) 첫 가입 회원도 동일하게 적용한다.</div>
+      </div>
+      <div class="rules-article">
+        <div class="rules-article-title">제 5 조 [시상]</div>
+        <div class="rules-article-body">1. 매월 각 리그 1등은 상금 3만원을 받는다.
+2. 2개월 풀리그 진행 시 1등은 상금 7만원을 받고, 2등은 상금 5만원을 받는다.
+3. 연말 시상은 1, 2등을 하며 상금은 운영진이 정해서 별도 공지한다.
+ 1) 매월 리그 결과에 따라 개인별 점수 부여, 연말에 총점으로 순위를 매긴다.
+ 2) 순위별 점수와 에버리지 승감은 별도
+4. 이벤트 경기가 있을 시에는 운영진이 별도 공지 후 시상 게임을 진행할 수 있다.
+5. 리그 경기를 진행하지 못했을 시에 귀책 사유가 있는 사람(서로 안 맞았을 시에 양쪽 다)이 남은 게임당 리그발전기금 5천원을 낸다.</div>
+      </div>
+      <div class="rules-article">
+        <div class="rules-article-title">제 6 조 [경조사]</div>
+        <div class="rules-article-body">1. 본회의 이름으로 경조사를 따로 하지 않는다.
+2. 개인별로 하는 것은 자유이다.</div>
+      </div>
+    </div>
+
+    <!-- 제 4 장 -->
+    <div class="rules-chapter">
+      <div class="rules-chapter-title">제 4 장 &nbsp; 운 영 진</div>
+
+      <div class="rules-article">
+        <div class="rules-article-title">제 1 조 [구 성]</div>
+        <div class="rules-article-body">운영진은 본회를 대표하는 회장 1명, 총무 1명으로 구성된다.</div>
+      </div>
+      <div class="rules-article">
+        <div class="rules-article-title">제 2 조 [직 무]</div>
+        <div class="rules-article-body">1. 운영진은 본 모임의 제반 운영을 담당하며, 이에 대한 권한과 책임을 갖는다.
+2. 운영진은 본 모임의 설립 목적에 합당한 방향으로 이끌어야 할 의무가 있다.</div>
+      </div>
+      <div class="rules-article">
+        <div class="rules-article-title">제 3 조 [회 장]</div>
+        <div class="rules-article-body">1. 회장은 대내적으로 모든 회원을 대표하며, 대외적으로 본회를 대표한다.
+2. 회장은 본회의 모든 업무로 인한 최종책임을 진다.</div>
+      </div>
+      <div class="rules-article">
+        <div class="rules-article-title">제 4 조 [총 무]</div>
+        <div class="rules-article-body">총무는 회장이 더 이상 직무를 수행할 수 없을 경우 대행하며, 회장을 도와 전반적인 본 회의 운영에 도움을 제공할 의무를 가지며 회계에 있어 정기모임운영 및 기타 모임에 따라 회비를 사용할 의무가 있다. 총무는 매월 회계보고의 의무가 있으나, 카카오뱅크에 입출금 내역이 나오므로 이의제기가 없을 시에 회계보고는 생략한다.</div>
+      </div>
+      <div class="rules-article">
+        <div class="rules-article-title">제 5 조 [임 기]</div>
+        <div class="rules-article-body">회장의 임기는 1월 1일부터 익년 12월 31일 까지 2년이며 연임이 가능하다.
+총무의 임기는 회장과 같다.</div>
+      </div>
+      <div class="rules-article">
+        <div class="rules-article-title">제 6 조 [운영진의 유고]</div>
+        <div class="rules-article-body">1. 회장이 직무를 더 이상 수행할 수 없을 경우, 총무가 임기 말까지 대행한다.
+2. 총무가 직무를 더 이상 수행할 수 없는 경우 회장이 임시 대체 및 추천 선임할 수 있다.
+3. 임기 수행기간 중 임시대체 및 추천 선임 기간은 2주일 내에 결정한다.</div>
+      </div>
+      <div class="rules-article">
+        <div class="rules-article-title">제 7 조 [운영진 선출]</div>
+        <div class="rules-article-body">1. 회장은 홀수년 마지막 정기 총회에서 투표를 통하여 선출한다.
+2. 총무는 신임 회장이 정회원 중의 한명을 지명하여 임명한다.</div>
+      </div>
+      <div class="rules-article">
+        <div class="rules-article-title">제 8 조 [점수 조정 위원회]</div>
+        <div class="rules-article-body">1. 점수 조정 위원회는 운영진이 아니다.
+2. 빌리존 앱의 추천 핸디와 개인이 원래 가진 핸디를 취합하여 본회에 적당한 에버리지를 정한다.</div>
+      </div>
+    </div>
+
+    <!-- 제 5 장 -->
+    <div class="rules-chapter">
+      <div class="rules-chapter-title">제 5 장 &nbsp; 회칙개정</div>
+
+      <div class="rules-article">
+        <div class="rules-article-title">제 1 조 [회칙개정]</div>
+        <div class="rules-article-body">1. 회칙개정은 정회원 승인(2/3이상) 또는 운영진 회의에 의하여 발의 될 수 있다.
+2. 발의된 내용은 3주일간 게시판에 게시하여 회원들의 의견을 수렴한다.
+3. 운영진은 수렴된 의견을 바탕으로 개정안을 작성하여 1주일간 게시판을 통해 공지를 하고, 정기 모임 때 정회원들의 찬반여부를 투표로 결정하며, 참석한 정회원 수의 2/3 이상의 찬성 시 개정안을 확정, 공표한다.
+4. 확정된 개정안은 공표일로부터 효력이 발생한다.</div>
+      </div>
+      <div class="rules-article">
+        <div class="rules-article-title">제 2 조 [기 타]</div>
+        <div class="rules-article-body">본 회의 회칙에 명시되지 않은 사항은 운영진 회의에서 논의, 공표한다.</div>
+      </div>
+      <div class="rules-article">
+        <div class="rules-article-title">제 3 조 [시 행]</div>
+        <div class="rules-article-body">본 회칙은 공고된 날로부터 즉시 시행한다.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

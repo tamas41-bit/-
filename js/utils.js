@@ -38,7 +38,7 @@ export function generateMatchPairs(playerIds) {
 export function calculateStandings(players, matches, scoring) {
   const stats = {};
   players.forEach(p => {
-    stats[p.id] = { id: p.id, name: p.name, wins: 0, losses: 0, noGames: 0, played: 0, total: players.length - 1 };
+    stats[p.id] = { id: p.id, name: p.name, wins: 0, losses: 0, draws: 0, played: 0, total: players.length - 1 };
   });
 
   matches.forEach(m => {
@@ -49,13 +49,13 @@ export function calculateStandings(players, matches, scoring) {
     } else if (m.result === 'player2') {
       if (stats[m.player2Id]) { stats[m.player2Id].wins++; stats[m.player2Id].played++; }
       if (stats[m.player1Id]) { stats[m.player1Id].losses++; stats[m.player1Id].played++; }
-    } else if (m.result === 'noGame') {
-      if (stats[m.player1Id]) { stats[m.player1Id].noGames++; stats[m.player1Id].played++; }
-      if (stats[m.player2Id]) { stats[m.player2Id].noGames++; stats[m.player2Id].played++; }
+    } else if (m.result === 'draw' || m.result === 'noGame') {
+      if (stats[m.player1Id]) { stats[m.player1Id].draws++; stats[m.player1Id].played++; }
+      if (stats[m.player2Id]) { stats[m.player2Id].draws++; stats[m.player2Id].played++; }
     }
   });
 
   return Object.values(stats)
-    .map(s => ({ ...s, points: s.wins * scoring.win + s.losses * scoring.loss + s.noGames * scoring.noGame }))
+    .map(s => ({ ...s, points: s.wins * scoring.win + s.losses * scoring.loss + s.draws * scoring.noGame }))
     .sort((a, b) => b.points !== a.points ? b.points - a.points : b.wins - a.wins);
 }

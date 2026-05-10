@@ -168,7 +168,7 @@ function renderStandings() {
       <td><strong>${p.name}</strong></td>
       <td class="wins">${p.wins}</td>
       <td class="losses">${p.losses}</td>
-      <td class="no-games">${p.noGames}</td>
+      <td class="no-games">${p.draws}</td>
       <td class="points">${p.points}</td>
       <td><div style="display:flex;align-items:center;gap:0.4rem;">
         <div class="progress-bar" style="width:55px;margin:0;"><div class="progress-fill" style="width:${pct}%"></div></div>
@@ -280,8 +280,8 @@ function renderEntryList() {
     if (!m.result) {
       statusHtml = '<span class="match-status status-pending">미진행</span>';
       actionHtml = `<button class="btn btn-sm btn-danger" onclick="openResultModal('${m.id}','${oppId}','${oppName}')">결과 입력</button>`;
-    } else if (m.result === 'noGame') {
-      statusHtml = '<span class="match-status status-nogame">미경기</span>';
+    } else if (m.result === 'draw' || m.result === 'noGame') {
+      statusHtml = '<span class="match-status status-nogame">무승부</span>';
     } else {
       const myWin = (m.result === 'player1' && m.player1Id === loggedInPlayer.id) ||
                     (m.result === 'player2' && m.player2Id === loggedInPlayer.id);
@@ -306,6 +306,8 @@ function openResultModal(matchId, oppId, oppName) {
   pendingOpponentName = oppName;
   document.getElementById('modalMatchInfo').innerHTML =
     `<strong>${loggedInPlayer.name}</strong> vs <strong>${oppName}</strong>`;
+  document.getElementById('modalBtnMyWin').textContent = `${loggedInPlayer.name} 승리`;
+  document.getElementById('modalBtnOppWin').textContent = `${oppName} 승리`;
   document.getElementById('modalAlert').innerHTML = '';
   document.getElementById('resultModal').classList.add('active');
 }
@@ -316,11 +318,14 @@ async function submitResult(type) {
   if (!m) return;
 
   let result, winnerId = null;
-  if (type === 'loss') {
+  if (type === 'win') {
+    result = m.player1Id === loggedInPlayer.id ? 'player1' : 'player2';
+    winnerId = loggedInPlayer.id;
+  } else if (type === 'loss') {
     result = m.player1Id === pendingOpponentId ? 'player1' : 'player2';
     winnerId = pendingOpponentId;
   } else {
-    result = 'noGame';
+    result = 'draw';
   }
 
   try {

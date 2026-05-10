@@ -54,7 +54,7 @@
         <table class="standings-table">
           <thead>
             <tr>
-              <th>순위</th><th>이름</th><th>승</th><th>패</th><th>미경기</th><th>승점</th><th>진행률</th>
+              <th>순위</th><th>이름</th><th>승</th><th>패</th><th>무</th><th>승점</th><th>진행률</th>
             </tr>
           </thead>
           <tbody id="standingsBody">
@@ -125,8 +125,9 @@
     <div id="modalMatchInfo" style="margin-bottom:1.25rem;color:var(--text-secondary);"></div>
     <div id="modalAlert"></div>
     <div style="display:flex;flex-direction:column;gap:0.75rem;">
-      <button class="btn btn-danger btn-full" onclick="submitResult('loss')">상대방이 이겼습니다 (내가 졌습니다)</button>
-      <button class="btn btn-secondary btn-full" onclick="submitResult('noGame')">경기를 진행하지 못했습니다</button>
+      <button class="btn btn-primary btn-full" id="modalBtnMyWin" onclick="submitResult('win')"></button>
+      <button class="btn btn-danger btn-full" id="modalBtnOppWin" onclick="submitResult('loss')"></button>
+      <button class="btn btn-secondary btn-full" onclick="submitResult('draw')">무승부</button>
     </div>
   </div>
 </div>

@@ -244,6 +244,20 @@ body {
 .schedule-player { font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 0.35rem; }
 .schedule-note { font-size: 0.83rem; color: var(--text-muted); margin-bottom: 0.65rem; }
 
+/* Nav logout */
+.nav-logout {
+  display: block; padding: 0.9rem 1.1rem;
+  color: #ef9a9a; font-size: 0.9rem; cursor: pointer;
+  border-bottom: 3px solid transparent; transition: all 0.2s;
+  border: none; background: none; font-family: inherit;
+}
+.nav-logout:hover { color: #ef5350; border-bottom-color: #ef5350; }
+.nav-user-name {
+  display: flex; align-items: center;
+  padding: 0.9rem 0.5rem 0.9rem 1.1rem;
+  font-size: 0.82rem; color: var(--gold); white-space: nowrap;
+}
+
 /* Responsive */
 @media (max-width: 680px) {
   .nav-links { display: none; flex-direction: column; position: absolute; top: 100%; left: 0; right: 0; background: #0a2e0a; border-top: 1px solid var(--border); z-index: 99; }

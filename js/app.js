@@ -276,18 +276,21 @@ function renderEntryList() {
     const opp = allPlayers.find(p => p.id === oppId);
     const oppName = opp ? opp.name : '?';
 
+    const editBtn = `<button class="btn btn-sm btn-secondary" onclick="openResultModal('${m.id}','${oppId}','${oppName}')">수정</button>`;
     let statusHtml = '', actionHtml = '';
     if (!m.result) {
       statusHtml = '<span class="match-status status-pending">미진행</span>';
       actionHtml = `<button class="btn btn-sm btn-danger" onclick="openResultModal('${m.id}','${oppId}','${oppName}')">결과 입력</button>`;
     } else if (m.result === 'draw' || m.result === 'noGame') {
       statusHtml = '<span class="match-status status-nogame">무승부</span>';
+      actionHtml = editBtn;
     } else {
       const myWin = (m.result === 'player1' && m.player1Id === loggedInPlayer.id) ||
                     (m.result === 'player2' && m.player2Id === loggedInPlayer.id);
       statusHtml = myWin
         ? '<span class="match-status status-win">승리 ✓</span>'
         : '<span class="match-status status-loss">패배</span>';
+      actionHtml = editBtn;
     }
     return `<div class="match-item">
       <div class="match-vs">

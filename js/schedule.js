@@ -20,6 +20,13 @@ async function init() {
     populateSelects();
     await loadScheduleList();
     setDefaultDate();
+
+    const saved = localStorage.getItem('hankyu_player');
+    if (saved) {
+      const { id } = JSON.parse(saved);
+      const player = allPlayers.find(p => p.id === id);
+      if (player) setScheduleLoggedIn(player);
+    }
   } catch (e) {
     document.getElementById('scheduleListContent').innerHTML = `<div class="alert alert-error">불러오기 실패: ${e.message}</div>`;
   }
@@ -74,6 +81,15 @@ async function loadScheduleList() {
   }
 }
 
+function setScheduleLoggedIn(player) {
+  scheduleLoggedIn = player;
+  localStorage.setItem('hankyu_player', JSON.stringify({ id: player.id, name: player.name }));
+  document.getElementById('scheduleLoginArea').style.display = 'none';
+  document.getElementById('scheduleFormArea').style.display = 'block';
+  document.getElementById('scheduleLoggedInName').textContent = player.name + ' 님';
+  loadMySchedules();
+}
+
 async function loginForSchedule() {
   const pid = document.getElementById('schedulePlayerSelect').value;
   const pin = document.getElementById('schedulePin').value.trim();
@@ -81,15 +97,12 @@ async function loginForSchedule() {
   if (!/^\d{4}$/.test(pin)) { showAlert('scheduleLoginAlert', 'PIN은 숫자 4자리입니다.'); return; }
   const player = allPlayers.find(p => p.id === pid);
   if (!player || await hashString(pin) !== player.pinHash) { showAlert('scheduleLoginAlert', 'PIN이 올바르지 않습니다.'); return; }
-  scheduleLoggedIn = player;
-  document.getElementById('scheduleLoginArea').style.display = 'none';
-  document.getElementById('scheduleFormArea').style.display = 'block';
-  document.getElementById('scheduleLoggedInName').textContent = player.name + ' 님';
-  await loadMySchedules();
+  setScheduleLoggedIn(player);
 }
 
 function logoutSchedule() {
   scheduleLoggedIn = null;
+  localStorage.removeItem('hankyu_player');
   document.getElementById('scheduleLoginArea').style.display = 'block';
   document.getElementById('scheduleFormArea').style.display = 'none';
   document.getElementById('schedulePin').value = '';

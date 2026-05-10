@@ -26,6 +26,13 @@ async function init() {
     await loadData();
     subscribeMatches();
     populatePlayerSelect('entryPlayerSelect');
+
+    const saved = localStorage.getItem('hankyu_player');
+    if (saved) {
+      const { id } = JSON.parse(saved);
+      const player = allPlayers.find(p => p.id === id);
+      if (player) setEntryLoggedIn(player);
+    }
   } catch (e) {
     document.getElementById('leagueBanner').innerHTML = `<div class="alert alert-error">불러오기 실패: ${e.message}</div>`;
   }
@@ -129,6 +136,15 @@ function populatePlayerSelect(selectId) {
   });
 }
 
+function setEntryLoggedIn(player) {
+  loggedInPlayer = player;
+  localStorage.setItem('hankyu_player', JSON.stringify({ id: player.id, name: player.name }));
+  document.getElementById('entryStep1').style.display = 'none';
+  document.getElementById('entryStep2').style.display = 'block';
+  document.getElementById('loggedInName').textContent = player.name;
+  renderEntryList();
+}
+
 async function loginForEntry() {
   const pid = document.getElementById('entryPlayerSelect').value;
   const pin = document.getElementById('entryPin').value.trim();
@@ -139,15 +155,12 @@ async function loginForEntry() {
   if (!player) { showAlert('entryLoginAlert', '선수 정보를 찾을 수 없습니다.'); return; }
   if (await hashString(pin) !== player.pinHash) { showAlert('entryLoginAlert', 'PIN이 올바르지 않습니다.'); return; }
 
-  loggedInPlayer = player;
-  document.getElementById('entryStep1').style.display = 'none';
-  document.getElementById('entryStep2').style.display = 'block';
-  document.getElementById('loggedInName').textContent = player.name;
-  renderEntryList();
+  setEntryLoggedIn(player);
 }
 
 function logoutEntry() {
   loggedInPlayer = null;
+  localStorage.removeItem('hankyu_player');
   document.getElementById('entryStep1').style.display = 'block';
   document.getElementById('entryStep2').style.display = 'none';
   document.getElementById('entryPin').value = '';

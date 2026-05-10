@@ -776,6 +776,28 @@ async function deleteEndedLeague() {
   } catch (e) { showAlert('historyAlert', '삭제 오류: ' + e.message); }
 }
 
+async function restoreLeague() {
+  if (!historyLeague) return;
+  if (!confirm(`"${historyLeague.name}" 리그를 다시 진행 중으로 복원하시겠습니까?`)) return;
+  try {
+    await updateDoc(doc(db, 'leagues', historyLeague.id), { active: true });
+    showAlert('historyAlert', `"${historyLeague.name}" 리그가 복원되었습니다.`, 'success');
+    allEndedLeagues = allEndedLeagues.filter(l => l.id !== historyLeague.id);
+    historyLeague = null; historyPlayers = []; historyMatches = [];
+    document.getElementById('historyMatchList').innerHTML = '';
+    document.getElementById('historyLeagueActions').style.display = 'none';
+    const sel = document.getElementById('historyLeagueSelect');
+    sel.innerHTML = '<option value="">-- 리그를 선택하세요 --</option>';
+    allEndedLeagues.forEach(l => {
+      const opt = document.createElement('option');
+      opt.value = l.id; opt.textContent = l.name;
+      sel.appendChild(opt);
+    });
+    await loadLeagues();
+  } catch (e) { showAlert('historyAlert', '복원 오류: ' + e.message); }
+}
+window.restoreLeague = restoreLeague;
+
 // ── 일정 관리 ──────────────────────────────────────────────────────
 
 async function loadAdminSchedules() {

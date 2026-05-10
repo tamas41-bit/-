@@ -64,7 +64,7 @@
       <div class="tab"        id="atab-history"  onclick="switchAdminTab('history')">이전 리그 수정</div>
       <div class="tab"        id="atab-members"  onclick="switchAdminTab('members')">회원 관리</div>
       <div class="tab"        id="atab-schedule" onclick="switchAdminTab('schedule')">경기 일정 관리</div>
-      <div class="tab"        id="atab-settings" onclick="switchAdminTab('settings')">설정</div>
+      <div class="tab"        id="atab-settings" onclick="switchAdminTab('settings')">관리자 정보 설정</div>
     </div>
 
     <!-- 리그 관리 -->
@@ -125,11 +125,15 @@
           <div class="card-title">회원 관리</div>
           <span id="memberCount" style="font-size:0.85rem;color:var(--text-muted)"></span>
         </div>
+        <div style="background:var(--bg-table);border-radius:8px;padding:1rem;margin-bottom:1.25rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.7;">
+          <div style="font-weight:bold;color:var(--gold);margin-bottom:0.5rem;">새로운 회원의 정보를 추가하거나, 기존 회원의 정보를 수정할 수 있는 공간입니다.</div>
+          <div>여기에 등록되지 않은 회원은 [ 리그 참가자 설정 ]에 추가할 수 없습니다.</div>
+        </div>
         <div id="memberAlert"></div>
         <div style="display:flex;gap:0.6rem;margin-bottom:0.75rem;flex-wrap:wrap;">
           <input type="text" class="form-control" id="newMemberName" placeholder="이름" style="flex:1;min-width:100px;">
           <input type="number" class="form-control" id="newMemberHandicap" placeholder="핸디" style="width:80px;" min="0">
-          <input type="text" class="form-control" id="newMemberPin" placeholder="PIN 4자리" maxlength="4" inputmode="numeric" style="width:110px;">
+          <input type="text" class="form-control" id="newMemberPin" placeholder="비밀번호 4자리" maxlength="4" inputmode="numeric" style="width:110px;">
           <button class="btn btn-primary" onclick="addMember()">추가</button>
         </div>
         <div id="memberList"><div class="loading"><span class="spinner"></span></div></div>
@@ -198,7 +202,10 @@
     <div class="tab-content" id="acontent-history">
       <div class="card">
         <div class="card-header">
-          <div class="card-title">이전 리그 결과 관리</div>
+          <div class="card-title">이전 리그 수정</div>
+        </div>
+        <div style="background:var(--bg-table);border-radius:8px;padding:1rem;margin-bottom:1.25rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.7;">
+          <div style="font-weight:bold;color:var(--gold);">이전에 종료된 리그의 결과를 수정하거나 리그 기록을 삭제할 수 있는 공간입니다.</div>
         </div>
         <div class="form-group" style="margin-bottom:1rem;">
           <label class="form-label">리그 선택</label>
@@ -209,6 +216,7 @@
         <div id="historyAlert"></div>
         <div id="historyMatchList"></div>
         <div id="historyLeagueActions" style="display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+          <button class="btn btn-secondary btn-full" style="margin-bottom:0.75rem;" onclick="restoreLeague()">이 리그 복원 (진행 중으로 되돌리기)</button>
           <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:0.75rem;">리그 전체 삭제 시 모든 데이터가 영구적으로 제거됩니다.</p>
           <button class="btn btn-danger" onclick="deleteEndedLeague()">이 리그 전체 삭제</button>
         </div>
@@ -221,6 +229,9 @@
         <div class="card-header">
           <div class="card-title">경기 일정 관리</div>
           <span id="scheduleCount" style="font-size:0.85rem;color:var(--text-muted)"></span>
+        </div>
+        <div style="background:var(--bg-table);border-radius:8px;padding:1rem;margin-bottom:1.25rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.7;">
+          <div style="font-weight:bold;color:var(--gold);">회원들이 등록한 게임 가능 일정 탭을 관리할 수 있는 공간입니다.</div>
         </div>
         <div id="adminScheduleList"><div class="loading"><span class="spinner"></span></div></div>
       </div>

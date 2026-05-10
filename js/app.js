@@ -170,7 +170,6 @@ function renderStandings() {
       <td><strong>${p.name}</strong></td>
       <td class="wins">${p.wins}</td>
       <td class="losses">${p.losses}</td>
-      <td class="no-games">${p.draws}</td>
       <td class="points">${p.points}</td>
       <td><div style="display:flex;align-items:center;gap:0.4rem;">
         <div class="progress-bar" style="width:55px;margin:0;"><div class="progress-fill" style="width:${pct}%"></div></div>

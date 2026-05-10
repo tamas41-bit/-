@@ -10,6 +10,7 @@ let allEndedLeagues = [];
 let currentLeague = null;
 let resultLeague = null;
 let historyLeague = null;
+let selectedHistoryPlayerId = null;
 let currentEditLeagueId = null;
 
 let allPlayers = [];
@@ -651,6 +652,7 @@ async function onHistoryLeagueChange() {
   const id = document.getElementById('historyLeagueSelect').value;
   historyLeague = allEndedLeagues.find(l => l.id === id) || null;
   historyPlayers = []; historyMatches = [];
+  selectedHistoryPlayerId = null;
   document.getElementById('historyMatchList').innerHTML = '';
   document.getElementById('historyLeagueActions').style.display = historyLeague ? 'block' : 'none';
   if (!historyLeague) return;
@@ -665,31 +667,73 @@ async function loadHistoryData() {
   ]);
   historyPlayers = ps.docs.map(d => ({ id: d.id, ...d.data() }));
   historyMatches = ms.docs.map(d => ({ id: d.id, ...d.data() }));
-  renderHistoryMatchList();
+  if (selectedHistoryPlayerId && historyPlayers.find(p => p.id === selectedHistoryPlayerId)) {
+    renderHistoryPlayerMatches();
+  } else {
+    selectedHistoryPlayerId = null;
+    renderHistoryPlayerList();
+  }
 }
 
-function renderHistoryMatchList() {
+function renderHistoryPlayerList() {
   const el = document.getElementById('historyMatchList');
-  if (!historyMatches.length) { el.innerHTML = '<div class="empty-state">경기가 없습니다</div>'; return; }
+  if (!historyPlayers.length) { el.innerHTML = '<div class="empty-state">선수가 없습니다</div>'; return; }
 
-  const sorted = [...historyMatches].sort((a, b) => (a.result ? 1 : 0) - (b.result ? 1 : 0));
-  el.innerHTML = sorted.map(m => {
-    const p1 = historyPlayers.find(p => p.id === m.player1Id);
-    const p2 = historyPlayers.find(p => p.id === m.player2Id);
-    const p1n = p1?.name || '?', p2n = p2?.name || '?';
-    let resultText = '미진행', resultStyle = 'color:var(--text-muted)';
-    if (m.result === 'player1') { resultText = `${p1n} 승`; resultStyle = 'color:#81c784'; }
-    else if (m.result === 'player2') { resultText = `${p2n} 승`; resultStyle = 'color:#81c784'; }
-    else if (m.result === 'draw') { resultText = '무승부'; resultStyle = 'color:#9e9e9e'; }
-    else if (m.result === 'noGame') { resultText = '미경기'; resultStyle = 'color:#9e9e9e'; }
-    return `<div class="match-item">
-      <div>
-        <div class="match-vs"><span class="player-name">${p1n}</span><span class="vs-badge">vs</span><span class="player-name">${p2n}</span></div>
-        <div style="font-size:0.82rem;margin-top:0.2rem;${resultStyle}">${resultText}</div>
-      </div>
-      <button class="btn btn-sm btn-secondary" onclick="openHistoryEditResult('${m.id}','${m.player1Id}','${m.player2Id}','${p1n}','${p2n}')">수정</button>
+  el.innerHTML = historyPlayers.map(p => {
+    const myMatches = historyMatches.filter(m => m.player1Id === p.id || m.player2Id === p.id);
+    const played = myMatches.filter(m => m.result).length;
+    return `<div class="player-row" style="cursor:pointer;" onclick="selectHistoryPlayer('${p.id}')">
+      <span><strong>${p.name}</strong></span>
+      <span style="color:var(--text-muted);font-size:0.85rem;">${played}/${myMatches.length} 완료 ›</span>
     </div>`;
   }).join('');
+}
+
+function selectHistoryPlayer(playerId) {
+  selectedHistoryPlayerId = playerId;
+  renderHistoryPlayerMatches();
+}
+
+function renderHistoryPlayerMatches() {
+  const el = document.getElementById('historyMatchList');
+  const player = historyPlayers.find(p => p.id === selectedHistoryPlayerId);
+  if (!player) { renderHistoryPlayerList(); return; }
+
+  const myMatches = historyMatches.filter(m => m.player1Id === player.id || m.player2Id === player.id);
+  const sorted = [...myMatches].sort((a, b) => (a.result ? 1 : 0) - (b.result ? 1 : 0));
+  const played = myMatches.filter(m => m.result).length;
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid var(--border);">
+      <button class="btn btn-sm btn-secondary" onclick="backToHistoryPlayerList()">← 목록</button>
+      <strong style="color:var(--gold);font-size:1rem;">${player.name}</strong>
+      <span style="color:var(--text-muted);font-size:0.85rem;">${played}/${myMatches.length} 완료</span>
+    </div>
+    ${sorted.map(m => {
+      const isP1 = m.player1Id === player.id;
+      const me = historyPlayers.find(p => p.id === (isP1 ? m.player1Id : m.player2Id));
+      const opp = historyPlayers.find(p => p.id === (isP1 ? m.player2Id : m.player1Id));
+      const men = me?.name || '?', oppn = opp?.name || '?';
+      const p1n = historyPlayers.find(p => p.id === m.player1Id)?.name || '?';
+      const p2n = historyPlayers.find(p => p.id === m.player2Id)?.name || '?';
+      let resultText = '미진행', resultStyle = 'color:var(--text-muted)';
+      if (m.result === 'player1') { resultText = `${p1n} 승`; resultStyle = 'color:#81c784'; }
+      else if (m.result === 'player2') { resultText = `${p2n} 승`; resultStyle = 'color:#81c784'; }
+      else if (m.result === 'draw') { resultText = '무승부'; resultStyle = 'color:#9e9e9e'; }
+      else if (m.result === 'noGame') { resultText = '미경기'; resultStyle = 'color:#9e9e9e'; }
+      return `<div class="match-item">
+        <div>
+          <div class="match-vs"><span class="player-name">${men}</span><span class="vs-badge">vs</span><span class="player-name">${oppn}</span></div>
+          <div style="font-size:0.82rem;margin-top:0.2rem;${resultStyle}">${resultText}</div>
+        </div>
+        <button class="btn btn-sm btn-secondary" onclick="openHistoryEditResult('${m.id}','${m.player1Id}','${m.player2Id}','${p1n}','${p2n}')">수정</button>
+      </div>`;
+    }).join('')}`;
+}
+
+function backToHistoryPlayerList() {
+  selectedHistoryPlayerId = null;
+  renderHistoryPlayerList();
 }
 
 function openHistoryEditResult(matchId, p1Id, p2Id, p1Name, p2Name) {
@@ -862,6 +906,8 @@ window.adminSetResult = adminSetResult;
 window.loadEndedLeaguesForAdmin = loadEndedLeaguesForAdmin;
 window.onHistoryLeagueChange = onHistoryLeagueChange;
 window.openHistoryEditResult = openHistoryEditResult;
+window.selectHistoryPlayer = selectHistoryPlayer;
+window.backToHistoryPlayerList = backToHistoryPlayerList;
 window.deleteEndedLeague = deleteEndedLeague;
 window.loadAdminSchedules = loadAdminSchedules;
 window.openScheduleEdit = openScheduleEdit;

@@ -453,7 +453,8 @@ async function confirmDeletePlayer() {
 function openBonusModal(playerId, playerName, currentBonus) {
   bonusPlayerId = playerId;
   document.getElementById('bonusPlayerName').textContent = playerName;
-  document.getElementById('currentBonusDisplay').textContent = currentBonus > 0 ? `+${currentBonus}` : currentBonus;
+  const bonusFormatted = currentBonus > 0 ? `+${currentBonus}` : String(currentBonus);
+  document.getElementById('currentBonusDisplay').textContent = bonusFormatted;
   document.getElementById('bonusInput').value = currentBonus;
   document.getElementById('bonusAlert').innerHTML = '';
   document.getElementById('bonusModal').classList.add('active');
@@ -462,7 +463,7 @@ function openBonusModal(playerId, playerName, currentBonus) {
 async function saveBonusPoints() {
   if (!bonusPlayerId || !currentLeague) return;
   const raw = document.getElementById('bonusInput').value;
-  const val = parseInt(raw);
+  const val = Math.round(parseFloat(raw) * 10) / 10;
   if (raw === '' || isNaN(val)) { showAlert('bonusAlert', '숫자를 입력하세요.'); return; }
 
   try {

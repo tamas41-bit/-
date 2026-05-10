@@ -19,7 +19,7 @@ async function init() {
 
     if (snap.empty) {
       document.getElementById('leagueSelect').innerHTML = '<option value="">종료된 리그가 없습니다</option>';
-      document.getElementById('historyContent').innerHTML = '<div class="empty-state"><div class="icon">📋</div>종료된 리그가 없습니다</div>';
+      document.getElementById('historyContent').innerHTML = '<div class="empty-state">종료된 리그가 없습니다</div>';
       return;
     }
 
@@ -69,8 +69,8 @@ function renderHistory() {
     </div>
 
     <div class="tabs" style="margin-bottom:0;">
-      <div class="tab active" id="htab-standings" onclick="switchHistoryTab('standings')">🏆 순위표</div>
-      <div class="tab" id="htab-matrix" onclick="switchHistoryTab('matrix')">📊 대진표</div>
+      <div class="tab active" id="htab-standings" onclick="switchHistoryTab('standings')">순위표</div>
+      <div class="tab" id="htab-matrix" onclick="switchHistoryTab('matrix')">대진표</div>
     </div>
 
     <div class="tab-content active" id="hcontent-standings">

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
@@ -10,7 +10,7 @@
 
 <nav class="navbar">
   <div class="navbar-inner">
-    <a class="navbar-brand" href="index.html">한큐빌리어드</a>
+    <a class="navbar-brand" href="index.html">🎱 한큐빌리어드</a>
     <button class="nav-toggle" onclick="document.getElementById('navLinks').classList.toggle('open')">☰</button>
     <div class="nav-links" id="navLinks">
       <a href="index.html" class="nav-link">순위표</a>
@@ -38,7 +38,7 @@
   <!-- 로그인 -->
   <div id="adminLogin" class="card" style="max-width:420px;margin:2rem auto;">
     <div class="card-header">
-      <div class="card-title">관리자 로그인</div>
+      <div class="card-title">🔐 관리자 로그인</div>
     </div>
     <div id="setupNotice" style="display:none;" class="alert alert-info">처음 사용 시 관리자 비밀번호를 설정하세요.</div>
     <div id="adminLoginAlert"></div>
@@ -53,7 +53,7 @@
   <div id="adminPanel" style="display:none;">
 
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
-      <h2 style="color:var(--gold)">관리자 패널</h2>
+      <h2 style="color:var(--gold)">⚙️ 관리자 패널</h2>
       <button class="btn btn-secondary btn-sm" onclick="adminLogout()">로그아웃</button>
     </div>
 
@@ -71,7 +71,7 @@
     <div class="tab-content active" id="acontent-league">
       <div class="card">
         <div class="card-header">
-          <div class="card-title">진행 중인 리그</div>
+          <div class="card-title">📋 진행 중인 리그</div>
           <span id="activeLeagueCount" style="font-size:0.85rem;color:var(--text-muted)"></span>
         </div>
         <div id="activeLeagueList"><div class="loading"><span class="spinner"></span></div></div>
@@ -79,7 +79,7 @@
 
       <div class="card">
         <div class="card-header">
-          <div class="card-title">새 리그 시작</div>
+          <div class="card-title">➕ 새 리그 시작</div>
         </div>
         <div class="form-group">
           <label class="form-label">리그 이름</label>
@@ -108,7 +108,7 @@
     <div class="tab-content" id="acontent-members">
       <div class="card">
         <div class="card-header">
-          <div class="card-title">회원 관리</div>
+          <div class="card-title">👥 회원 관리</div>
           <span id="memberCount" style="font-size:0.85rem;color:var(--text-muted)"></span>
         </div>
         <div id="memberAlert"></div>
@@ -126,7 +126,7 @@
     <div class="tab-content" id="acontent-players">
       <div class="card">
         <div class="card-header">
-          <div class="card-title">리그 참가자</div>
+          <div class="card-title">🏅 리그 참가자</div>
           <span id="playerCount" style="font-size:0.85rem;color:var(--text-muted)"></span>
         </div>
         <div style="background:var(--bg-table);border-radius:8px;padding:1rem;margin-bottom:1.25rem;font-size:0.85rem;color:var(--text-secondary);line-height:1.7;">
@@ -151,7 +151,7 @@
 
       <div class="card">
         <div class="card-header">
-          <div class="card-title">회원에서 참가자 추가</div>
+          <div class="card-title">➕ 회원에서 참가자 추가</div>
         </div>
         <div id="memberSelectAlert"></div>
         <div id="memberSelectList"></div>
@@ -163,7 +163,7 @@
     <div class="tab-content" id="acontent-results">
       <div class="card">
         <div class="card-header">
-          <div class="card-title">경기 결과 수정</div>
+          <div class="card-title">🔧 경기 결과 수정</div>
         </div>
         <div class="form-group" style="margin-bottom:1rem;">
           <label class="form-label">리그 선택</label>
@@ -180,7 +180,7 @@
     <div class="tab-content" id="acontent-history">
       <div class="card">
         <div class="card-header">
-          <div class="card-title">이전 리그 결과 관리</div>
+          <div class="card-title">📋 이전 리그 결과 관리</div>
         </div>
         <div class="form-group" style="margin-bottom:1rem;">
           <label class="form-label">리그 선택</label>
@@ -191,7 +191,7 @@
         <div id="historyAlert"></div>
         <div id="historyMatchList"></div>
         <div id="historyLeagueActions" style="display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
-          <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:0.75rem;">리그 전체 삭제 시 모든 데이터가 영구적으로 제거됩니다.</p>
+          <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:0.75rem;">⚠️ 리그 전체 삭제 시 모든 데이터가 영구적으로 제거됩니다.</p>
           <button class="btn btn-danger" onclick="deleteEndedLeague()">이 리그 전체 삭제</button>
         </div>
       </div>
@@ -201,7 +201,7 @@
     <div class="tab-content" id="acontent-schedule">
       <div class="card">
         <div class="card-header">
-          <div class="card-title">경기 일정 관리</div>
+          <div class="card-title">📅 경기 일정 관리</div>
           <span id="scheduleCount" style="font-size:0.85rem;color:var(--text-muted)"></span>
         </div>
         <div id="adminScheduleList"><div class="loading"><span class="spinner"></span></div></div>
@@ -212,7 +212,7 @@
     <div class="tab-content" id="acontent-settings">
       <div class="card">
         <div class="card-header">
-          <div class="card-title">관리자 비밀번호 변경</div>
+          <div class="card-title">🔑 관리자 비밀번호 변경</div>
         </div>
         <div class="form-group">
           <label class="form-label">현재 비밀번호</label>

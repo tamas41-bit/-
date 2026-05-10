@@ -1,6 +1,6 @@
 import { db } from './firebase-config.js';
 import {
-  collection, doc, getDocs, getDoc, query, where, onSnapshot, updateDoc, orderBy
+  collection, doc, getDocs, getDoc, query, where, onSnapshot, updateDoc, orderBy, limit
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { hashString, showAlert, calculateStandings } from './utils.js';
 
@@ -39,8 +39,12 @@ async function init() {
       const { id } = JSON.parse(saved);
       for (const league of allActiveLeagues) {
         try {
-          const pSnap = await getDoc(doc(db, 'leagues', league.id, 'players', id));
-          if (pSnap.exists()) { defaultLeague = league; break; }
+          const pSnap = await getDocs(query(
+            collection(db, 'leagues', league.id, 'players'),
+            where('memberId', '==', id),
+            limit(1)
+          ));
+          if (!pSnap.empty) { defaultLeague = league; break; }
         } catch {}
       }
     }

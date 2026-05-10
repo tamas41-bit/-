@@ -568,9 +568,12 @@ function renderResultPlayerMatches() {
       <span style="color:var(--text-muted);font-size:0.85rem;">${played}/${myMatches.length} 완료</span>
     </div>
     ${sorted.map(m => {
-      const p1 = resultPlayers.find(p => p.id === m.player1Id);
-      const p2 = resultPlayers.find(p => p.id === m.player2Id);
-      const p1n = p1?.name || '?', p2n = p2?.name || '?';
+      const isP1 = m.player1Id === player.id;
+      const me = resultPlayers.find(p => p.id === (isP1 ? m.player1Id : m.player2Id));
+      const opp = resultPlayers.find(p => p.id === (isP1 ? m.player2Id : m.player1Id));
+      const men = me?.name || '?', oppn = opp?.name || '?';
+      const p1n = resultPlayers.find(p => p.id === m.player1Id)?.name || '?';
+      const p2n = resultPlayers.find(p => p.id === m.player2Id)?.name || '?';
       let resultText = '미진행', resultStyle = 'color:var(--text-muted)';
       if (m.result === 'player1') { resultText = `${p1n} 승`; resultStyle = 'color:#81c784'; }
       else if (m.result === 'player2') { resultText = `${p2n} 승`; resultStyle = 'color:#81c784'; }
@@ -578,7 +581,7 @@ function renderResultPlayerMatches() {
       else if (m.result === 'noGame') { resultText = '미경기'; resultStyle = 'color:#9e9e9e'; }
       return `<div class="match-item">
         <div>
-          <div class="match-vs"><span class="player-name">${p1n}</span><span class="vs-badge">vs</span><span class="player-name">${p2n}</span></div>
+          <div class="match-vs"><span class="player-name">${men}</span><span class="vs-badge">vs</span><span class="player-name">${oppn}</span></div>
           <div style="font-size:0.82rem;margin-top:0.2rem;${resultStyle}">${resultText}</div>
         </div>
         <button class="btn btn-sm btn-secondary" onclick="openEditResult('${m.id}','${m.player1Id}','${m.player2Id}','${p1n}','${p2n}')">수정</button>

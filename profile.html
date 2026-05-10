@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>내 정보 - 한큐빌리어드 리그</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a class="navbar-brand" href="index.html">🎱 한큐빌리어드</a>
+    <button class="nav-toggle" onclick="document.getElementById('navLinks').classList.toggle('open')">☰</button>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html" class="nav-link">순위표</a>
+      <a href="schedule.html" class="nav-link">경기 일정</a>
+      <a href="history.html" class="nav-link">이전 리그 결과</a>
+      <a href="members.html" class="nav-link">회원 목록</a>
+      <a href="admin.html" class="nav-link">관리자</a>
+      <a href="profile.html" id="navUserName" class="nav-user-name nav-link active" style="display:none;"></a>
+      <button class="nav-logout" id="navLogoutBtn" style="display:none;" onclick="navLogout()">로그아웃</button>
+    </div>
+  </div>
+</nav>
+<script>
+  (function(){
+    const s = localStorage.getItem('hankyu_player');
+    if(s){ const {name} = JSON.parse(s); document.getElementById('navUserName').textContent = name; document.getElementById('navUserName').style.display='flex'; document.getElementById('navLogoutBtn').style.display='block'; }
+    else { location.href = 'login.html'; }
+  })();
+  function navLogout(){ localStorage.removeItem('hankyu_player'); location.href = 'index.html'; }
+</script>
+
+<div class="container">
+  <div style="max-width:480px;margin:0 auto;">
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">👤 내 정보</div>
+      </div>
+      <div style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:0.25rem;">현재 이름</div>
+      <div style="font-size:1.2rem;font-weight:bold;color:var(--gold);margin-bottom:0.5rem;" id="currentNameDisplay"></div>
+      <div style="font-size:0.85rem;color:var(--text-muted);" id="handicapDisplay"></div>
+    </div>
+
+    <!-- 이름 변경 -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">✏️ 이름 변경</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">새 이름</label>
+        <input type="text" class="form-control" id="newNameInput" placeholder="새 이름 입력" onkeydown="if(event.key==='Enter')saveName()">
+      </div>
+      <div id="nameAlert"></div>
+      <button class="btn btn-primary btn-full" onclick="saveName()">이름 변경</button>
+    </div>
+
+    <!-- 비밀번호 변경 -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🔑 비밀번호 변경</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">현재 비밀번호</label>
+        <input type="text" class="form-control input-masked" id="currentPinInput" maxlength="4" inputmode="numeric" placeholder="현재 4자리 비밀번호">
+      </div>
+      <div class="form-group">
+        <label class="form-label">새 비밀번호</label>
+        <input type="text" class="form-control input-masked" id="newPinInput" maxlength="4" inputmode="numeric" placeholder="새 4자리 비밀번호">
+      </div>
+      <div class="form-group">
+        <label class="form-label">새 비밀번호 확인</label>
+        <input type="text" class="form-control input-masked" id="confirmPinInput" maxlength="4" inputmode="numeric" placeholder="새 비밀번호 재입력" onkeydown="if(event.key==='Enter')savePin()">
+      </div>
+      <div id="pinAlert"></div>
+      <button class="btn btn-primary btn-full" onclick="savePin()">비밀번호 변경</button>
+    </div>
+
+  </div>
+</div>
+
+<script type="module" src="js/profile.js"></script>
+</body>
+</html>

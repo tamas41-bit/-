@@ -3,7 +3,7 @@ import {
   collection, doc, getDocs, addDoc, updateDoc,
   query, where, serverTimestamp, limit
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { hashString, showAlert, formatDatetime } from './utils.js';
+import { formatDatetime, showAlert } from './utils.js';
 
 let activeLeague = null;
 let allPlayers = [];
@@ -17,7 +17,6 @@ async function init() {
       const ps = await getDocs(collection(db, 'leagues', activeLeague.id, 'players'));
       allPlayers = ps.docs.map(d => ({ id: d.id, ...d.data() }));
     }
-    populateSelects();
     await loadScheduleList();
     setDefaultDate();
 
@@ -39,16 +38,6 @@ function setDefaultDate() {
   if (timeEl) timeEl.value = '19:00';
   const dateEl = document.getElementById('scheduleDate');
   if (dateEl) dateEl.value = fmt;
-}
-
-function populateSelects() {
-  const sel = document.getElementById('schedulePlayerSelect');
-  if (!sel) return;
-  allPlayers.forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p.id; opt.textContent = p.name;
-    sel.appendChild(opt);
-  });
 }
 
 async function loadScheduleList() {
@@ -83,21 +72,10 @@ async function loadScheduleList() {
 
 function setScheduleLoggedIn(player) {
   scheduleLoggedIn = player;
-  localStorage.setItem('hankyu_player', JSON.stringify({ id: player.id, name: player.name }));
   document.getElementById('scheduleLoginArea').style.display = 'none';
   document.getElementById('scheduleFormArea').style.display = 'block';
-  document.getElementById('scheduleLoggedInName').textContent = player.name + ' 님';
+  document.getElementById('scheduleLoggedInName').textContent = player.name;
   loadMySchedules();
-}
-
-async function loginForSchedule() {
-  const pid = document.getElementById('schedulePlayerSelect').value;
-  const pin = document.getElementById('schedulePin').value.trim();
-  if (!pid) { showAlert('scheduleLoginAlert', '이름을 선택하세요.'); return; }
-  if (!/^\d{4}$/.test(pin)) { showAlert('scheduleLoginAlert', 'PIN은 숫자 4자리입니다.'); return; }
-  const player = allPlayers.find(p => p.id === pid);
-  if (!player || await hashString(pin) !== player.pinHash) { showAlert('scheduleLoginAlert', 'PIN이 올바르지 않습니다.'); return; }
-  setScheduleLoggedIn(player);
 }
 
 function logoutSchedule() {
@@ -105,7 +83,6 @@ function logoutSchedule() {
   localStorage.removeItem('hankyu_player');
   document.getElementById('scheduleLoginArea').style.display = 'block';
   document.getElementById('scheduleFormArea').style.display = 'none';
-  document.getElementById('schedulePin').value = '';
 }
 
 async function postSchedule() {
@@ -168,7 +145,6 @@ async function cancelSchedule(scheduleId) {
   await loadScheduleList();
 }
 
-window.loginForSchedule = loginForSchedule;
 window.logoutSchedule = logoutSchedule;
 window.postSchedule = postSchedule;
 window.cancelSchedule = cancelSchedule;

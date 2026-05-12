@@ -173,7 +173,7 @@ function renderStandings() {
       <td class="points">${p.points}</td>
       <td><div style="display:flex;align-items:center;gap:0.4rem;">
         <div class="progress-bar" style="width:55px;margin:0;"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <span style="font-size:0.75rem;color:var(--text-muted)">${p.played}/${p.total}</span>
+        <span style="font-size:0.75rem;color:#ffffff">${p.played}/${p.total}</span>
       </div></td>
     </tr>`;
   }).join('');
